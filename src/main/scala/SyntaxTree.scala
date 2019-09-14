@@ -21,4 +21,4 @@ case class Integer_(n: Integer) extends Literal
 case class Float_(n: Float) extends Literal
 case object True extends Literal
 case object False extends Literal
-case object Nil extends Literal
+case object Nil_ extends Literal
