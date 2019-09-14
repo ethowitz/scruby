@@ -4,7 +4,7 @@ import scala.util.parsing.combinator._
 
 object Lexer extends RegexParsers {
   override def skipWhitespace = true
-  override val whiteSpace = "[ \r\f\n]+".r
+  override val whiteSpace = "[ \r\f\n;]+".r
 
   def apply(code: String): Either[LexerError, List[Token]] = {
     parse(tokens, code) match {
@@ -16,12 +16,12 @@ object Lexer extends RegexParsers {
   def klass = "class" ^^ (_ => Klass)
   def module = "module" ^^ (_ => Module)
   def def_ = "def" ^^ (_ => Def)
-  def if_ = "if" ^^ (_ => If)
-  def unless = "unless" ^^ (_ => Unless)
+  def if_ = "if" ^^ (_ => IfToken)
+  def unless = "unless" ^^ (_ => UnlessToken)
   def elsif = "elsif" ^^ (_ => Elsif)
   def else_ = "else" ^^ (_ => Else)
   def end = "end" ^^ (_ => End)
-  def nil = "nil" ^^ (_ => Nil)
+  def nil = "nil" ^^ (_ => NilLiteral)
   def true_ = "true" ^^ (_ => TrueLiteral)
   def false_ = "false" ^^ (_ => FalseLiteral)
   def ampersand = "&" ^^ (_ => Ampersand)

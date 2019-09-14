@@ -9,13 +9,13 @@ case class FloatLiteral(n: Float) extends Token
 case object TrueLiteral extends Token
 case object FalseLiteral extends Token
 case object Not extends Token
-case object Nil extends Token
+case object NilLiteral extends Token
 case class Identifier(s: String) extends Token
 case object Klass extends Token
 case object Module extends Token
 case object Def extends Token
-case object If extends Token
-case object Unless extends Token
+case object IfToken extends Token
+case object UnlessToken extends Token
 case object Elsif extends Token
 case object Else extends Token
 case object End extends Token
