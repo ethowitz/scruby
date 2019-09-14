@@ -16,7 +16,7 @@ sealed trait Literal extends Expression
 case class Array_(arr: Seq[Any]) extends Literal
 case class Hash(h: Map[Any, Any]) extends Literal
 case class String_(s: String) extends Literal
-case class Symbol(s: String) extends Literal
+case class Symbol_(s: String) extends Literal
 case class Integer_(n: Integer) extends Literal
 case class Float_(n: Float) extends Literal
 case object True extends Literal

@@ -5,6 +5,17 @@ import scala.util.parsing.input._
 
 object ScrubyParser extends Parsers {
   override type Elem = Token
+
+  private def identifier: Parser[IDENTIFIER] = {
+    accept("identifier", { case id @ IDENTIFIER(name) => id })
+  }
+
+  private def literal: Parser[Literal] = {
+    accept("literal", {
+      case StringLiteral(s) => String_(s)
+      case SymbolLiteral(s) => Symbol_(s)
+    })
+  }
 }
 
 class TokenReader(tokens: Seq[Token]) extends Reader[Token] {
