@@ -10,6 +10,7 @@ case class Invocation(receiver: Expression, message: String, args: List[Expressi
 case class NotExpression(exp: Expression) extends Expression
 case class If(predicate: Expression, yesBranch: List[Expression], noBranch: List[Expression]) extends Expression
 case class Unless(predicate: Expression, body: List[Expression]) extends Expression
+case class Identifier(name: String) extends Expression
 
 sealed trait Literal extends Expression
 case class Array_(arr: Seq[Any]) extends Literal

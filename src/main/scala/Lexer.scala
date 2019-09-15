@@ -26,7 +26,6 @@ object Lexer extends RegexParsers {
   def false_ = "false" ^^ (_ => FalseLiteral)
   def ampersand = "&" ^^ (_ => Ampersand)
   def ivarPrefix = "@" ^^ (_ => IvarPrefix)
-  def methodInvoker = "." ^^ (_ => MethodInvoker)
   def scopeResolver = "::" ^^ (_ => ScopeResolver)
   def comma = "," ^^ (_ => Comma)
   def period = "." ^^ (_ => Period)
@@ -43,8 +42,8 @@ object Lexer extends RegexParsers {
   def arrow = "=>" ^^ (_ => Arrow)
   def backslash = "\\" ^^ (_ => Backslash)
 
-  def identifier: Parser[Identifier] = {
-    "[a-zA-Z_=<>%&\\*\\|][a-zA-Z0-9_]*[?\\?|?!]*".r ^^ { s => Identifier(s) }
+  def identifier: Parser[IdentifierToken] = {
+    "[a-zA-Z_=<>%&\\*\\|][a-zA-Z0-9_]*[?\\?|?!]*".r ^^ { s => IdentifierToken(s) }
   }
 
   def string: Parser[StringLiteral] = {
@@ -67,10 +66,9 @@ object Lexer extends RegexParsers {
     else_ | end | nil | true_ | false_ | string | symbol | identifier |
     integer | float
 
-  private def parsing_group_2 = ampersand | ivarPrefix | methodInvoker |
-    scopeResolver | comma | period | openingParenthesis | closingParenthesis |
-    openingCurlyBracket | closingCurlyBracket | openingSquareBracket |
-    closingSquareBracket | semicolon | questionMark | not | colon
+  private def parsing_group_2 = ampersand | ivarPrefix | scopeResolver | comma | period |
+    openingParenthesis | closingParenthesis | openingCurlyBracket | closingCurlyBracket |
+    openingSquareBracket | closingSquareBracket | semicolon | questionMark | not | colon
 
   private def tokens: Parser[List[Token]] = phrase(rep1(parsing_group_1 | parsing_group_2))
 }

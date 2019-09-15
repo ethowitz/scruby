@@ -12,7 +12,9 @@ array ::= "[" (exp (, exp)*)* "]"
 class ::= "class" identifier (def)* "end"
 method ::= "def" identifier ?("(" params ")") (exp)* "end"
 literal ::= string | symbol | integer | float | "true" | "false" | "nil"
-invocation ::= (exp ".")* identifier ?(args) ?(block)
+invocation ::= ?(receiver ".") message
+receiver ::= (literal | conditional) ?("." message receiver)
+message ::= identifier ?(args) ?(block)
 params ::= (identifier(, identifier)*)*
 args ::= (exp(, exp)*)*
        | "(" (exp(, exp)*)* ")"
@@ -22,3 +24,5 @@ conditional ::= "if" exp (exp)* (elsif)* ?(else) "end"
               | "unless" exp (exp)* "end" 
 elsif ::= "elsif" exp (exp)*
 else ::= "else" (exp)*
+
+("332".first 2).to_s 0
