@@ -2,14 +2,13 @@ package scruby
 
 sealed trait SyntaxTree
 
-sealed trait Definition extends SyntaxTree
-case class KlassDef(methods: List[MethodDef]) extends Definition
-case class MethodDef(name: String, params: List[String], body: List[Expression]) extends Definition
+case class KlassDef(name: String, methods: List[MethodDef]) extends SyntaxTree
+case class MethodDef(name: String, params: List[String], body: List[Expression]) extends SyntaxTree
 
 sealed trait Expression extends SyntaxTree
 case class Invocation(receiver: Expression, message: String, args: List[Expression]) extends Expression
 case class NotExpression(exp: Expression) extends Expression
-case class If(predicate: Expression, positiveBranch: List[Expression], negativeBranch: List[Expression]) extends Expression
+case class If(predicate: Expression, yesBranch: List[Expression], noBranch: List[Expression]) extends Expression
 case class Unless(predicate: Expression, body: List[Expression]) extends Expression
 
 sealed trait Literal extends Expression
