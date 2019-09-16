@@ -2,7 +2,7 @@ package scruby
 
 sealed trait SyntaxTree
 
-case class KlassDef(name: String, methods: List[MethodDef]) extends SyntaxTree
+case class KlassDef(name: String, statements: List[SyntaxTree]) extends SyntaxTree
 case class MethodDef(name: String, params: List[String], body: List[Expression]) extends SyntaxTree
 
 sealed trait Expression extends SyntaxTree

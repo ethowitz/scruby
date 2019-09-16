@@ -19,23 +19,31 @@ object ScrubyParser extends Parsers {
   private def definition: Parser[SyntaxTree] = klassDef | methodDef
 
   private def elsif: Parser[List[Expression] => If] = {
-    (Elsif ~> expression ~ (expression).*) ^^ {
-      case predicate ~ yesBranch => If.curried(predicate)(yesBranch)
+    (Elsif ~> expression ~ Separator ~ sequence(expression)) ^^ {
+      case predicate ~ _ ~ yesBranch => If.curried(predicate)(yesBranch)
     }
   }
 
   private def expression: Parser[Expression] = conditional | invocation | literal
+
+  private def sequence[A](parser: Parser[A]): Parser[List[A]] = {
+    (repsep(parser, Separator) <~ Separator).? ^^ {
+      case Some(exps) => exps
+      case None => List[A]()
+    }
+  }
 
   private def identifier: Parser[Identifier] = {
     accept("identifier", { case id @ IdentifierToken(name) => Identifier(name) })
   }
 
   private def iff: Parser[If] = {
-    (IfToken ~> expression ~ rep(expression) ~ rep(elsif) ~ (Else ~> rep(expression)).? <~ End) ^^ {
-      case predicate ~ yesBranch ~ elsifs ~ Some(noBranch) => {
+    (IfToken ~> expression ~ Separator ~ sequence(expression) ~ rep(elsif) ~
+      (Else ~ Separator ~ sequence(expression)).? ~ End) ^^ {
+      case predicate ~ _ ~ yesBranch ~ elsifs ~ Some(_ ~ _~ noBranch) ~ _ => {
         If(predicate, yesBranch, elsifs.foldRight(noBranch) { (acc, ifExp) => List(acc(ifExp)) })
       }
-      case predicate ~ yesBranch ~ elsifs ~ None => {
+      case predicate ~ _ ~ yesBranch ~ elsifs ~ None ~ _ => {
         If(predicate, yesBranch, elsifs.foldRight(List[If]()) { (acc, ifExp) => List(acc(ifExp)) })
       }
     }
@@ -49,8 +57,8 @@ object ScrubyParser extends Parsers {
   }
 
   private def klassDef: Parser[KlassDef] = {
-    (Klass ~> identifier ~ rep(methodDef) <~ End) ^^ {
-      case Identifier(name) ~ methodDefs => KlassDef(name, methodDefs)
+    (Klass ~> identifier ~ Separator ~ sequence(definition) ~ End) ^^ {
+      case Identifier(name) ~ _ ~ expressions ~  _ => KlassDef(name, expressions)
     }
   }
 
@@ -81,9 +89,12 @@ object ScrubyParser extends Parsers {
   }
 
   private def methodDef: Parser[MethodDef] = {
-    (Def ~> identifier ~ (OpeningParenthesis ~ repsep(identifier, Comma) ~ ClosingParenthesis).? ~ rep(expression) <~ End) ^^ {
-      case Identifier(name) ~ Some(_ ~ params ~ _) ~ expressions => MethodDef(name, params.map(_.name), expressions)
-      case Identifier(name) ~ None ~ expressions => MethodDef(name, List[String](), expressions)
+    (Def ~> identifier ~ (OpeningParenthesis ~ repsep(identifier, Comma) ~ ClosingParenthesis).? ~
+        Separator ~ sequence(expression) ~ End) ^^ {
+      case Identifier(name) ~ Some(_ ~ params ~ _) ~ _ ~ expressions ~ _ =>
+        MethodDef(name, params.map(_.name), expressions)
+      case Identifier(name) ~ None ~ _ ~ expressions ~ _ =>
+        MethodDef(name, List[String](), expressions)
     }
   }
 
@@ -95,8 +106,8 @@ object ScrubyParser extends Parsers {
   }
 
   private def unless: Parser[Unless] = {
-    (UnlessToken ~> expression ~ rep(expression) <~ End) ^^ {
-      case predicate ~ expressions => Unless(predicate, expressions)
+    (UnlessToken ~ expression ~ Separator ~ sequence(expression) ~ End) ^^ {
+      case _ ~ predicate ~ _ ~ expressions ~ _ => Unless(predicate, expressions)
     }
   }
 }

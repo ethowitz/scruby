@@ -3,13 +3,12 @@ package scruby
 import scala.util.parsing.combinator._
 
 object Lexer extends RegexParsers {
-  override def skipWhitespace = true
-  override val whiteSpace = "[ \r\f\n;]+".r
+  override def skipWhitespace = false
 
   def apply(code: String): Either[LexerError, List[Token]] = {
     parse(tokens, code) match {
       case NoSuccess(msg, _) => Left(LexerError(msg))
-      case Success(result, _) => Right(result)
+      case Success(result, _) => Right(result.filter(_ != Whitespace))
     }
   }
 
@@ -35,12 +34,13 @@ object Lexer extends RegexParsers {
   def closingCurlyBracket = "}" ^^ (_ => ClosingCurlyBracket)
   def openingSquareBracket = "[" ^^ (_ => OpeningSquareBracket)
   def closingSquareBracket = "]" ^^ (_ => ClosingSquareBracket)
-  def semicolon = ";" ^^ (_ => Semicolon)
   def questionMark = "?" ^^ (_ => QuestionMark)
   def not = "!" ^^ (_ => Not)
   def colon = ":" ^^ (_ => Colon)
   def arrow = "=>" ^^ (_ => Arrow)
   def backslash = "\\" ^^ (_ => Backslash)
+  def separator = "[\n|;|\r\f]+".r ^^ (_ => Separator)
+  def whitespace = "[ ]+".r ^^ (_ => Whitespace)
 
   def identifier: Parser[IdentifierToken] = {
     "[a-zA-Z_=<>%&\\*\\|][a-zA-Z0-9_]*[?\\?|?!]*".r ^^ { s => IdentifierToken(s) }
@@ -68,7 +68,8 @@ object Lexer extends RegexParsers {
 
   private def parsing_group_2 = ampersand | ivarPrefix | scopeResolver | comma | period |
     openingParenthesis | closingParenthesis | openingCurlyBracket | closingCurlyBracket |
-    openingSquareBracket | closingSquareBracket | semicolon | questionMark | not | colon
+    openingSquareBracket | closingSquareBracket | questionMark | not | colon | separator |
+    whitespace
 
   private def tokens: Parser[List[Token]] = phrase(rep1(parsing_group_1 | parsing_group_2))
 }

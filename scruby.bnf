@@ -22,6 +22,7 @@ block ::= "{" ?("|" params "|") exp* "}"
         | "do ?("|" params "|") exp* "end"
 conditional ::= "if" exp (exp)* (elsif)* ?(else) "end"
               | "unless" exp (exp)* "end" 
+separator ::= "\n" | ";"
 elsif ::= "elsif" exp (exp)*
 else ::= "else" (exp)*
 

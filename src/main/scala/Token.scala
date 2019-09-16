@@ -23,6 +23,8 @@ case object Ampersand extends Token
 case object Comment extends Token 
 case object Arrow extends Token
 case object Backslash extends Token
+case object Separator extends Token
+case object Whitespace extends Token
 // TODO: syntactic sugar for the following method invocations:
 //
 //case object PLUS extends Token
@@ -49,6 +51,5 @@ case object OpeningCurlyBracket extends Token
 case object ClosingCurlyBracket extends Token
 case object OpeningSquareBracket extends Token
 case object ClosingSquareBracket extends Token
-case object Semicolon extends Token
 case object QuestionMark extends Token
 case object Colon extends Token
