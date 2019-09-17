@@ -1,0 +1,5 @@
+package scruby
+
+object ObjectMap {
+
+}

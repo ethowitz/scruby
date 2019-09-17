@@ -6,25 +6,25 @@ import scala.util.parsing.input._
 object ScrubyParser extends Parsers {
   override type Elem = Token
 
-  def apply(tokens: Seq[Token]): Either[ParserError, SyntaxTree] = {
+  def apply(tokens: Seq[Token]): Either[ParserError, List[SyntaxTree]] = {
     val reader = new TokenReader(tokens)
-    phrase(definition | expression)(reader) match {
+    phrase(repsep(definition | expression, Separator))(reader) match {
       case NoSuccess(msg, next) => Left(ParserError(msg))
       case Success(result, next) => Right(result)
     }
   }
 
-  private def conditional: Parser[Expression] = iff | unless
+  private def conditional: Parser[SyntaxTree] = iff | unless
 
   private def definition: Parser[SyntaxTree] = klassDef | methodDef
 
-  private def elsif: Parser[List[Expression] => If] = {
+  private def elsif: Parser[List[SyntaxTree] => If] = {
     (Elsif ~> expression ~ Separator ~ sequence(expression)) ^^ {
       case predicate ~ _ ~ yesBranch => If.curried(predicate)(yesBranch)
     }
   }
 
-  private def expression: Parser[Expression] = conditional | invocation | literal
+  private def expression: Parser[SyntaxTree] = conditional | invocation | literal
 
   private def sequence[A](parser: Parser[A]): Parser[List[A]] = {
     (repsep(parser, Separator) <~ Separator).? ^^ {
@@ -62,10 +62,10 @@ object ScrubyParser extends Parsers {
     }
   }
 
-  private def literal: Parser[Literal] = {
+  private def literal: Parser[SyntaxTree] = {
     accept("literal", {
       case StringLiteral(s) => String_(s)
-      case SymbolLiteral(s) => Symbol_(s)
+      case SymbolLiteral(s) => Symbol_(Symbol(s))
       case IntegerLiteral(n) => Integer_(n)
       case FloatLiteral(n) => Float_(n)
       case TrueLiteral => True
@@ -74,17 +74,17 @@ object ScrubyParser extends Parsers {
     })
   }
 
-  private def message: Parser[Expression => Invocation] = messageParens | messageNoParens
+  private def message: Parser[SyntaxTree => Invocation] = messageParens | messageNoParens
 
-  private def messageNoParens: Parser[Expression => Invocation] = {
+  private def messageNoParens: Parser[SyntaxTree => Invocation] = {
     (identifier ~ repsep(expression, Comma)) ^^ {
-      case Identifier(name) ~ args => Invocation.curried(_: Expression)(name)(args)
+      case Identifier(name) ~ args => Invocation.curried(_: SyntaxTree)(name)(args)
     }
   }
 
-  private def messageParens: Parser[Expression => Invocation] = {
+  private def messageParens: Parser[SyntaxTree => Invocation] = {
     (identifier ~ OpeningParenthesis ~ repsep(expression, Comma) ~ ClosingParenthesis) ^^ {
-      case Identifier(name) ~ _ ~ args ~ _ => Invocation.curried(_: Expression)(name)(args)
+      case Identifier(name) ~ _ ~ args ~ _ => Invocation.curried(_: SyntaxTree)(name)(args)
     }
   }
 
@@ -98,7 +98,7 @@ object ScrubyParser extends Parsers {
     }
   }
 
-  private def receiver: Parser[Expression] = {
+  private def receiver: Parser[SyntaxTree] = {
     ((literal | conditional | identifier) ~ (Period ~ message ~ receiver).?) ^^ {
       //case recv ~ Some(_ ~ invWithoutReceiver ~ arg) => invWithoutReceiver(recv)
       case recv ~ None => recv

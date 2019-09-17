@@ -1,10 +1,10 @@
 package scruby
 
 object Compiler {
-  def apply(code: String): Either[CompilationError, SyntaxTree] = {
+  def apply(code: String): Either[CompilationError, List[SyntaxTree]] = {
     for {
       tokens <- Lexer(code).right
-      syntaxTree <- ScrubyParser(tokens).right
-    } yield syntaxTree
+      trees <- ScrubyParser(tokens).right
+    } yield trees
   }
 }
