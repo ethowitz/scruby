@@ -36,8 +36,7 @@ object ScrubyParser extends Parsers {
   private def identifier: Parser[Identifier] = {
     accept("identifier", { case id @ IdentifierToken(name) => Identifier(name) })
   }
-
-  private def iff: Parser[If] = {
+private def iff: Parser[If] = {
     (IfToken ~> expression ~ Separator ~ sequence(expression) ~ rep(elsif) ~
       (Else ~ Separator ~ sequence(expression)).? ~ End) ^^ {
       case predicate ~ _ ~ yesBranch ~ elsifs ~ Some(_ ~ _~ noBranch) ~ _ => {
@@ -65,7 +64,7 @@ object ScrubyParser extends Parsers {
   private def literal: Parser[SyntaxTree] = {
     accept("literal", {
       case StringLiteral(s) => String_(s)
-      case SymbolLiteral(s) => Symbol_(Symbol(s))
+      case SymbolLiteral(s) => Symbol_(s)
       case IntegerLiteral(n) => Integer_(n)
       case FloatLiteral(n) => Float_(n)
       case TrueLiteral => True

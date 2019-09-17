@@ -31,7 +31,7 @@ case class Identifier(name: String) extends SyntaxTree
 case class Array_(arr: Seq[Any]) extends SyntaxTree
 case class Hash(h: Map[Any, Any]) extends SyntaxTree
 case class String_(s: String) extends SyntaxTree
-case class Symbol_(s: Symbol) extends SyntaxTree
+case class Symbol_(s: String) extends SyntaxTree
 case class Integer_(n: Integer) extends SyntaxTree
 case class Float_(n: Float) extends SyntaxTree
 case object True extends SyntaxTree

@@ -25,6 +25,7 @@ object Evaluator {
   private def evalNil = ScrubyNilClass
   private def evalTrue = ScrubyTrueClass
   private def evalFalse = ScrubyFalseClass
+  private def evalSymbol(s: String) = ScrubySymbol(Symbol(s))
 
   private def evalIf(p: SyntaxTree, yes: List[SyntaxTree], no: List[SyntaxTree]): ScrubyObject = {
     eval(p) match {
