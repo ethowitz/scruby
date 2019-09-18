@@ -34,9 +34,10 @@ object ScrubyParser extends Parsers {
   }
 
   private def identifier: Parser[Identifier] = {
-    accept("identifier", { case id @ IdentifierToken(name) => Identifier(name) })
+    accept("identifier", { case id @ IdentifierToken(name) => Identifier(Symbol(name)) })
   }
-private def iff: Parser[If] = {
+
+  private def iff: Parser[If] = {
     (IfToken ~> expression ~ Separator ~ sequence(expression) ~ rep(elsif) ~
       (Else ~ Separator ~ sequence(expression)).? ~ End) ^^ {
       case predicate ~ _ ~ yesBranch ~ elsifs ~ Some(_ ~ _~ noBranch) ~ _ => {
@@ -64,7 +65,7 @@ private def iff: Parser[If] = {
   private def literal: Parser[SyntaxTree] = {
     accept("literal", {
       case StringLiteral(s) => String_(s)
-      case SymbolLiteral(s) => Symbol_(s)
+      case SymbolLiteral(s) => Symbol_(Symbol(s))
       case IntegerLiteral(n) => Integer_(n)
       case FloatLiteral(n) => Float_(n)
       case TrueLiteral => True
@@ -93,7 +94,7 @@ private def iff: Parser[If] = {
       case Identifier(name) ~ Some(_ ~ params ~ _) ~ _ ~ expressions ~ _ =>
         MethodDef(name, params.map(_.name), expressions)
       case Identifier(name) ~ None ~ _ ~ expressions ~ _ =>
-        MethodDef(name, List[String](), expressions)
+        MethodDef(name, List[Symbol](), expressions)
     }
   }
 

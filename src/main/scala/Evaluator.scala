@@ -3,38 +3,42 @@ package scruby
 object Evaluator {
   def apply(ts: List[SyntaxTree]) = evals(ts)
 
-  private def eval(t: SyntaxTree): ScrubyObject = t match {
-    //case KlassDef(name, es) => evalKlassDef(name, es)
-    //case MethodDef(name, statements) => evalMethodDef(name, statements)
+  def eval(t: SyntaxTree): ScrubyObject = t match {
+    case KlassDef(name, es) => evalKlassDef(name, es)
     //case Invocation(receiver, message, args) => evalInvocation(receiver, message, args)
     case If(p, yes, no) => evalIf(p, yes, no)
     case Unless(p, statements) => evalUnless(p, statements)
-    //case Identifier(name) => evalIdentifier(name)
     //case String_(s) => evalString(s)
-    //case Symbol_(s) => evalSymbol(s)
+    //case Symbol_(s) => ScrubySymbol(s)
     //case Integer_(n) => evalInteger(n)
     //case Float_(n) => evalFloat(n)
-    case True => evalTrue
-    case False => evalFalse
-    case Nil_ => evalNil
+    case True => ScrubyTrueClass
+    case False => ScrubyFalseClass
+    case Nil_ => ScrubyNilClass
     case ScrubyObjectContainer(obj) => obj
   }
 
-  private def evals(ts: List[SyntaxTree]) = ts.map(eval).last
+  def evals(ts: List[SyntaxTree]) = ts.map(eval).last
 
-  private def evalNil = ScrubyNilClass
-  private def evalTrue = ScrubyTrueClass
-  private def evalFalse = ScrubyFalseClass
-  private def evalSymbol(s: String) = ScrubySymbol(Symbol(s))
+  def evalKlassDef(name: Symbol, ts: List[SyntaxTree]): ScrubyObject = {
+    val methods = ts.foldLeft(Map[Symbol, ScrubyMethod]()) {
+      (acc, t) => t match {
+        case MethodDef(name, params, ts) => acc + (name -> ScrubyMethod(params, ts))
+        case _ => acc
+      }
+    }
 
-  private def evalIf(p: SyntaxTree, yes: List[SyntaxTree], no: List[SyntaxTree]): ScrubyObject = {
+    ScrubyObject('Class, methods)
+  }
+
+  def evalIf(p: SyntaxTree, yes: List[SyntaxTree], no: List[SyntaxTree]): ScrubyObject = {
     eval(p) match {
       case ScrubyFalseClass | ScrubyNilClass => evals(no)
       case _ => evals(yes)
     }
   }
 
-  private def evalUnless(p: SyntaxTree, ts: List[SyntaxTree]): ScrubyObject = {
+  def evalUnless(p: SyntaxTree, ts: List[SyntaxTree]): ScrubyObject = {
     eval(p) match {
       case ScrubyFalseClass | ScrubyNilClass => ScrubyNilClass
       case _ => evals(ts)

@@ -1,3 +1,3 @@
 package scruby
 
-object ScrubyTrueClass extends ScrubyObject('TrueClass, List())
+object ScrubyTrueClass extends ScrubyObject('TrueClass, Map())

@@ -1,3 +1,3 @@
 package scruby
 
-object ScrubyFalseClass extends ScrubyObject('FalseClass, List())
+object ScrubyFalseClass extends ScrubyObject('FalseClass, Map())

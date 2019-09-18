@@ -1,7 +1,4 @@
 package scruby
 
-case class ScrubyObject(klass: Symbol, args: List[ScrubyObject])
+case class ScrubyObject(klass: Symbol, ms: Map[Symbol, ScrubyMethod])
 
-object ScrubyObject {
-
-}

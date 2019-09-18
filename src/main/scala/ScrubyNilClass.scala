@@ -1,4 +1,4 @@
 package scruby
 
-object ScrubyNilClass extends ScrubyObject('NilClass, List())
+object ScrubyNilClass extends ScrubyObject('NilClass, Map())
 
