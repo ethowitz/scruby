@@ -27,7 +27,7 @@ object ScrubyParser extends Parsers {
     }
   }
 
-  private def expression: Parser[SyntaxTree] = conditional | literal | invocation | invocationWithoutReceiver
+  private def expression: Parser[SyntaxTree] = conditional | invocation | invocationWithoutReceiver | literal
 
   private def sequence[A](parser: Parser[A]): Parser[List[A]] = {
     (repsep(parser, Separator) <~ Separator).? ^^ {
