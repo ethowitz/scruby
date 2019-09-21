@@ -12,17 +12,6 @@ object Lexer extends RegexParsers {
     }
   }
 
-  def klass = "class" ^^ (_ => Klass)
-  def module = "module" ^^ (_ => Module)
-  def def_ = "def" ^^ (_ => Def)
-  def if_ = "if" ^^ (_ => IfToken)
-  def unless = "unless" ^^ (_ => UnlessToken)
-  def elsif = "elsif" ^^ (_ => Elsif)
-  def else_ = "else" ^^ (_ => Else)
-  def end = "end" ^^ (_ => End)
-  def nil = "nil" ^^ (_ => NilLiteral)
-  def true_ = "true" ^^ (_ => TrueLiteral)
-  def false_ = "false" ^^ (_ => FalseLiteral)
   def ampersand = "&" ^^ (_ => Ampersand)
   def ivarPrefix = "@" ^^ (_ => IvarPrefix)
   def scopeResolver = "::" ^^ (_ => ScopeResolver)
@@ -34,7 +23,6 @@ object Lexer extends RegexParsers {
   def closingCurlyBracket = "}" ^^ (_ => ClosingCurlyBracket)
   def openingSquareBracket = "[" ^^ (_ => OpeningSquareBracket)
   def closingSquareBracket = "]" ^^ (_ => ClosingSquareBracket)
-  def questionMark = "?" ^^ (_ => QuestionMark)
   def not = "!" ^^ (_ => Not)
   def colon = ":" ^^ (_ => Colon)
   def arrow = "=>" ^^ (_ => Arrow)
@@ -43,7 +31,7 @@ object Lexer extends RegexParsers {
   def whitespace = "[ ]+".r ^^ (_ => Whitespace)
 
   def identifier: Parser[IdentifierToken] = {
-    "[a-zA-Z_=<>%&\\*\\|][a-zA-Z0-9_]*[?\\?|?!]*".r ^^ { s => IdentifierToken(s) }
+    "[a-zA-Z_=<>%&\\*\\|][a-zA-Z0-9_]*[?!]?".r ^^ { s => IdentifierToken(s) }
   }
 
   def string: Parser[StringLiteral] = {
@@ -51,7 +39,7 @@ object Lexer extends RegexParsers {
   }
 
   def symbol: Parser[SymbolLiteral] = {
-    ":[a-zA-Z_=<>%&\\*\\|][a-zA-Z0-9_]*[?\\?|?!]*".r ^^ { s => SymbolLiteral(s) }
+    ":[a-zA-Z_=<>%&\\*\\|][a-zA-Z0-9_]*[?!]?".r ^^ { s => SymbolLiteral(s) }
   }
 
   def integer: Parser[IntegerLiteral] = {
@@ -62,14 +50,11 @@ object Lexer extends RegexParsers {
     "(0|[1-9]+[0-9]*)+\\.[0-9]+".r ^^ { n => FloatLiteral(n.toFloat) }
   }
 
-  private def parsing_group_1 = klass | module | def_ | if_ | unless | elsif |
-    else_ | end | nil | true_ | false_ | string | symbol | identifier |
-    integer | float
+  private def parsing_group_1 = string | symbol | identifier | integer | float
 
   private def parsing_group_2 = ampersand | ivarPrefix | scopeResolver | comma | period |
     openingParenthesis | closingParenthesis | openingCurlyBracket | closingCurlyBracket |
-    openingSquareBracket | closingSquareBracket | questionMark | not | colon | separator |
-    whitespace
+    openingSquareBracket | closingSquareBracket | not | colon | separator | whitespace
 
   private def tokens: Parser[List[Token]] = phrase(rep1(parsing_group_1 | parsing_group_2))
 }

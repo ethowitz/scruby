@@ -8,23 +8,26 @@ object ScrubyParser extends Parsers {
 
   def apply(tokens: Seq[Token]): Either[ParserError, List[SyntaxTree]] = {
     val reader = new TokenReader(tokens)
+
     phrase(repsep(definition | expression, Separator))(reader) match {
       case NoSuccess(msg, next) => Left(ParserError(msg))
       case Success(result, next) => Right(result)
     }
   }
 
+  val keywords = List("def", "end", "true", "false", "class", "if", "elsif", "unless", "else")
+
   private def conditional: Parser[SyntaxTree] = iff | unless
 
   private def definition: Parser[SyntaxTree] = klassDef | methodDef
 
   private def elsif: Parser[List[SyntaxTree] => If] = {
-    (Elsif ~> expression ~ Separator ~ sequence(expression)) ^^ {
+    (elsifToken ~> expression ~ Separator ~ sequence(expression)) ^^ {
       case predicate ~ _ ~ yesBranch => If.curried(predicate)(yesBranch)
     }
   }
 
-  private def expression: Parser[SyntaxTree] = conditional | invocation | literal
+  private def expression: Parser[SyntaxTree] = conditional | literal | invocation | invocationWithoutReceiver
 
   private def sequence[A](parser: Parser[A]): Parser[List[A]] = {
     (repsep(parser, Separator) <~ Separator).? ^^ {
@@ -33,13 +36,25 @@ object ScrubyParser extends Parsers {
     }
   }
 
+  private def defToken: Parser[Token] = elem(IdentifierToken("def"))
+  private def endToken: Parser[Token] = elem(IdentifierToken("end"))
+  private def klassToken: Parser[Token] = elem(IdentifierToken("class"))
+  private def ifToken: Parser[Token] = elem(IdentifierToken("if"))
+  private def elsifToken: Parser[Token] = elem(IdentifierToken("elsif"))
+  private def elseToken: Parser[Token] = elem(IdentifierToken("else"))
+  private def unlessToken: Parser[Token] = elem(IdentifierToken("unless"))
+
+  private def idsWithoutKeywords: Parser[Identifier] = {
+    accept("identifier", { case IdentifierToken(name) if !(keywords contains name) => Identifier(Symbol(name)) })
+  }
+
   private def identifier: Parser[Identifier] = {
-    accept("identifier", { case id @ IdentifierToken(name) => Identifier(Symbol(name)) })
+    accept("identifier", { case IdentifierToken(name) => Identifier(Symbol(name)) })
   }
 
   private def iff: Parser[If] = {
-    (IfToken ~> expression ~ Separator ~ sequence(expression) ~ rep(elsif) ~
-      (Else ~ Separator ~ sequence(expression)).? ~ End) ^^ {
+    (ifToken ~> expression ~ Separator ~ sequence(expression) ~ rep(elsif) ~
+      (elseToken ~ Separator ~ sequence(expression)).? ~ endToken) ^^ {
       case predicate ~ _ ~ yesBranch ~ elsifs ~ Some(_ ~ _~ noBranch) ~ _ => {
         If(predicate, yesBranch, elsifs.foldRight(noBranch) { (acc, ifExp) => List(acc(ifExp)) })
       }
@@ -49,15 +64,20 @@ object ScrubyParser extends Parsers {
     }
   }
 
+  private def invocationWithoutReceiver: Parser[Invocation] = {
+    (message(idsWithoutKeywords)) ^^ {
+      case invWithoutReceiver => invWithoutReceiver(None) 
+    }
+  }
+
   private def invocation: Parser[Invocation] = {
-    ((receiver ~ Period).? ~ message) ^^ {
-      case Some(recv ~ _) ~ invWithoutReceiver => invWithoutReceiver(recv)
-      case None ~ invWithoutReceiver => invWithoutReceiver(null) 
+    (leftmostReceiver ~ Period ~ message(identifier)) ^^ {
+      case recv ~ _ ~ inv => inv(Some(recv))
     }
   }
 
   private def klassDef: Parser[KlassDef] = {
-    (Klass ~> identifier ~ Separator ~ sequence(definition) ~ End) ^^ {
+    (klassToken ~> idsWithoutKeywords ~ Separator ~ sequence(definition) ~ endToken) ^^ {
       case Identifier(name) ~ _ ~ expressions ~  _ => KlassDef(name, expressions)
     }
   }
@@ -68,29 +88,29 @@ object ScrubyParser extends Parsers {
       case SymbolLiteral(s) => Symbol_(Symbol(s))
       case IntegerLiteral(n) => Integer_(n)
       case FloatLiteral(n) => Float_(n)
-      case TrueLiteral => True
-      case FalseLiteral => False
-      case NilLiteral => Nil_
+      case IdentifierToken("true") => True
+      case IdentifierToken("false") => False
+      case IdentifierToken("nil") => Nil_
     })
   }
 
-  private def message: Parser[SyntaxTree => Invocation] = messageParens | messageNoParens
+  private def message(id: Parser[Identifier]): Parser[Option[SyntaxTree] => Invocation] = messageParens(id) | messageNoParens(id)
 
-  private def messageNoParens: Parser[SyntaxTree => Invocation] = {
-    (identifier ~ repsep(expression, Comma)) ^^ {
-      case Identifier(name) ~ args => Invocation.curried(_: SyntaxTree)(name)(args)
+  private def messageNoParens(id: Parser[Identifier]): Parser[Option[SyntaxTree] => Invocation] = {
+    (id ~ repsep(expression, Comma)) ^^ {
+      case Identifier(name) ~ args => Invocation.curried(_: Option[SyntaxTree])(name)(args)
     }
   }
 
-  private def messageParens: Parser[SyntaxTree => Invocation] = {
-    (identifier ~ OpeningParenthesis ~ repsep(expression, Comma) ~ ClosingParenthesis) ^^ {
-      case Identifier(name) ~ _ ~ args ~ _ => Invocation.curried(_: SyntaxTree)(name)(args)
+  private def messageParens(id: Parser[Identifier]): Parser[Option[SyntaxTree] => Invocation] = {
+    (id ~ OpeningParenthesis ~ repsep(expression, Comma) ~ ClosingParenthesis) ^^ {
+      case Identifier(name) ~ _ ~ args ~ _ => Invocation.curried(_: Option[SyntaxTree])(name)(args)
     }
   }
 
   private def methodDef: Parser[MethodDef] = {
-    (Def ~> identifier ~ (OpeningParenthesis ~ repsep(identifier, Comma) ~ ClosingParenthesis).? ~
-        Separator ~ sequence(expression) ~ End) ^^ {
+    (defToken ~> identifier ~ (OpeningParenthesis ~ repsep(idsWithoutKeywords, Comma) ~ ClosingParenthesis).? ~
+        Separator ~ sequence(expression) ~ endToken) ^^ {
       case Identifier(name) ~ Some(_ ~ params ~ _) ~ _ ~ expressions ~ _ =>
         MethodDef(name, params.map(_.name), expressions)
       case Identifier(name) ~ None ~ _ ~ expressions ~ _ =>
@@ -98,15 +118,22 @@ object ScrubyParser extends Parsers {
     }
   }
 
+  private def leftmostReceiver: Parser[SyntaxTree] = {
+    ((literal | conditional | idsWithoutKeywords) ~ (Period ~ message(identifier) ~ receiver).?) ^^ {
+      //case recv ~ Some(_ ~ invWithoutReceiver ~ arg) => invWithoutReceiver(recv)
+      case recv ~ None => recv
+    }
+  }
+
   private def receiver: Parser[SyntaxTree] = {
-    ((literal | conditional | identifier) ~ (Period ~ message ~ receiver).?) ^^ {
+    ((literal | conditional | identifier) ~ (Period ~ message(identifier) ~ receiver).?) ^^ {
       //case recv ~ Some(_ ~ invWithoutReceiver ~ arg) => invWithoutReceiver(recv)
       case recv ~ None => recv
     }
   }
 
   private def unless: Parser[Unless] = {
-    (UnlessToken ~ expression ~ Separator ~ sequence(expression) ~ End) ^^ {
+    (unlessToken ~ expression ~ Separator ~ sequence(expression) ~ endToken) ^^ {
       case _ ~ predicate ~ _ ~ expressions ~ _ => Unless(predicate, expressions)
     }
   }

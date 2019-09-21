@@ -51,5 +51,5 @@ case object OpeningCurlyBracket extends Token
 case object ClosingCurlyBracket extends Token
 case object OpeningSquareBracket extends Token
 case object ClosingSquareBracket extends Token
-case object QuestionMark extends Token
+//case object QuestionMark extends Token
 case object Colon extends Token
