@@ -15,7 +15,8 @@ object ScrubyParser extends Parsers {
     }
   }
 
-  val keywords = List("def", "end", "true", "false", "class", "if", "elsif", "unless", "else")
+  val keywords = List("def", "end", "true", "false", "class", "if", "elsif", "unless", "else",
+    "nil")
 
   private def conditional: Parser[SyntaxTree] = iff | unless
 

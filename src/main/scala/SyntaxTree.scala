@@ -13,7 +13,7 @@ sealed trait SyntaxTree {
         Invocation(Some(withBoundVars(recvr)), msg, ts map withBoundVars)
       case Invocation(None, msg, ts) => Invocation(None, msg, ts)
       case If(p, yes, no) =>
-        If(withBoundVars(t), yes map withBoundVars, no map withBoundVars)
+        If(withBoundVars(p), yes map withBoundVars, no map withBoundVars)
       case Unless(p, ts) => Unless(withBoundVars(p), ts map withBoundVars)
       case lit => lit
     }
