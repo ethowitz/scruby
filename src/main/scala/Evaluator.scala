@@ -17,8 +17,11 @@ object Evaluator {
       case Invocation(recvr, msg, args) => evalInvocation(recvr, msg, args)
       case If(p, yes, no) => evalIf(p, yes, no)
       case Unless(p, statements) => evalUnless(p, statements)
-      //case String_(s) => evalString(s)
-      //case Symbol_(s) => ScrubySymbol(s)
+      case Identifier(klass) => ks get klass match {
+        case Some(obj) => obj
+      }
+      case String_(s) => ScrubyString(s)
+      case Symbol_(s) => ScrubySymbol(s)
       //case Integer_(n) => evalInteger(n)
       //case Float_(n) => evalFloat(n)
       case True => ScrubyTrueClass
@@ -36,13 +39,11 @@ object Evaluator {
 
     def evalInvocation(recvr: Option[SyntaxTree], msg: Symbol, args: List[SyntaxTree]): ScrubyObject = {
       recvr match {
-        case Some(r) => eval(r) match {
-          case ScrubyObject(klass, ms) => ms get msg match {
-            case Some(method) => ScrubyMethod.invoke(method, args map eval)
-          }
+        case Some(r) => (eval(r).methods) get msg match {
+          case Some(method) => ScrubyMethod.invoke(method, args map eval)
         }
         case None => ks get 'Unbound match {
-          case Some(ScrubyObject(klass, ms)) => ms get msg match {
+          case Some(k) => k.methods get msg match {
             case Some(method) => ScrubyMethod.invoke(method, args map eval)
           }
         }

@@ -1,3 +1,5 @@
 package scruby
 
-object ScrubyTrueClass extends ScrubyObject('TrueClass, Map())
+object ScrubyTrueClass extends ScrubyObject('TrueClass) {
+  override def toString: String = "true"
+}
