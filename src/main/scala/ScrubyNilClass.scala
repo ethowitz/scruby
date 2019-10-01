@@ -1,6 +1,6 @@
 package scruby
 
-object ScrubyNilClass extends ScrubyObject('NilClass) {
+object ScrubyNilClass extends ScrubyObject('NilClass, None, Map()) {
   override def toString: String = "nil"
 
   override def predefMethods: Map[Symbol, ScrubyMethod] =
