@@ -1,4 +1,7 @@
-package scruby
+package com.ethowitz.scruby.core
+
+import com.ethowitz.scruby.evaluator.ScrubyMethod
+import com.ethowitz.scruby.parser.ScrubyObjectContainer
 
 class ScrubyObject(val klass: Symbol, val name: Option[Symbol], val ms: Map[Symbol, ScrubyMethod]) {
   def methods: Map[Symbol, ScrubyMethod] = predefMethods ++ ms
@@ -8,7 +11,8 @@ class ScrubyObject(val klass: Symbol, val name: Option[Symbol], val ms: Map[Symb
       ScrubyMethod(ScrubyObjectContainer(ScrubyString(klass.name)))
     val _initialize: (Symbol, ScrubyMethod) = 'initialize ->
       ScrubyMethod(ScrubyObjectContainer(ScrubyObject(klass, name, ms)))
-    val nil: (Symbol, ScrubyMethod) = Symbol("nil?") -> ScrubyMethod(False)
+    val nil: (Symbol, ScrubyMethod) = Symbol("nil?") ->
+      ScrubyMethod(ScrubyObjectContainer(ScrubyFalseClass))
 
     Map(nil, _klass, _initialize)
   }

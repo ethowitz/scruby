@@ -1,4 +1,4 @@
-package scruby
+package com.ethowitz.scruby.exceptions
 
 object RuntimeError {
   def apply(err: String, stack: List[String]): String = err + '\n' + stackMessage(stack)

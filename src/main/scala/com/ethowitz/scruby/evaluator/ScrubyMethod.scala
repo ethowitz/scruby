@@ -1,4 +1,7 @@
-package scruby
+package com.ethowitz.scruby.evaluator
+
+import com.ethowitz.scruby.parser.SyntaxTree
+import com.ethowitz.scruby.core.ScrubyObject
 
 case class ScrubyMethod(params: List[Symbol], ts: List[SyntaxTree])
 
