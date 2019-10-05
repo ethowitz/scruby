@@ -72,6 +72,7 @@ object Evaluator {
   def evalKlassDef(ts: List[SyntaxTree]): ScrubyObject = {
     val methods = ts.foldLeft(Map[Symbol, ScrubyMethod]()) {
       (acc, t) => t match {
+        case MethodDef('initialize, params, ts) => acc + ('new -> ScrubyMethod(params, ts))
         case MethodDef(name, params, ts) => acc + (name -> ScrubyMethod(params, ts))
         case t => acc
       }
