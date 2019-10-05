@@ -1,4 +1,7 @@
-package scruby
+package com.ethowitz.scruby.evaluator
+
+import com.ethowitz.scruby.parser._
+import com.ethowitz.scruby.core._
 
 object Evaluator {
   def apply(ts: List[SyntaxTree]) = evals(ts, evalKlassDefs(ts) + ('Unbound -> evalKlassDef(ts)))

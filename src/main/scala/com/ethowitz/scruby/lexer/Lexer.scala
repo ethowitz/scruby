@@ -1,5 +1,6 @@
-package scruby
+package com.ethowitz.scruby.lexer
 
+import com.ethowitz.scruby.exceptions.LexerError
 import scala.util.parsing.combinator._
 
 object Lexer extends RegexParsers {
@@ -58,7 +59,3 @@ object Lexer extends RegexParsers {
 
   private def tokens: Parser[List[Token]] = phrase(rep1(parsing_group_1 | parsing_group_2))
 }
-
-trait CompilationError
-case class LexerError(msg: String) extends CompilationError
-

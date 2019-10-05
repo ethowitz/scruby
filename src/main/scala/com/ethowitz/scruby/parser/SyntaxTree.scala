@@ -1,4 +1,6 @@
-package scruby
+package com.ethowitz.scruby.parser
+
+import com.ethowitz.scruby.core.ScrubyObject
 
 sealed trait SyntaxTree {
   def withBoundVars(tree: SyntaxTree, vars: Map[Symbol, ScrubyObject]): SyntaxTree = {

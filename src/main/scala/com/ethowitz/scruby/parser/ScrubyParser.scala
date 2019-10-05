@@ -1,5 +1,7 @@
-package scruby
+package com.ethowitz.scruby.parser
 
+import com.ethowitz.scruby.exceptions.ParserError
+import com.ethowitz.scruby.lexer._
 import scala.util.parsing.combinator._
 import scala.util.parsing.input._
 
@@ -151,5 +153,3 @@ class TokenReader(tokens: Seq[Token]) extends Reader[Token] {
   override def pos: Position = NoPosition
   override def rest: Reader[Token] = new TokenReader(tokens.tail)
 }
-
-case class ParserError(msg: String) extends CompilationError

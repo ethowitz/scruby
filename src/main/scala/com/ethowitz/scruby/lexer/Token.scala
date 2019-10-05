@@ -1,4 +1,4 @@
-package scruby
+package com.ethowitz.scruby.lexer
 
 sealed trait Token
 

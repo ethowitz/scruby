@@ -1,6 +1,8 @@
-package scruby
+package com.ethowitz.scruby
 
 import scala.io.Source
+import compiler.Compiler
+import evaluator.Evaluator
 
 object Scruby {
   def main(args: Array[String]): Unit = {

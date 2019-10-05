@@ -1,4 +1,6 @@
-package scruby
+package com.ethowitz.scruby.core
+
+import com.ethowitz.scruby.evaluator.ScrubyMethod
 
 class ScrubyString(val s: String, ms: Map[Symbol, ScrubyMethod])
     extends ScrubyObject('Class, Some('String), ms) {
