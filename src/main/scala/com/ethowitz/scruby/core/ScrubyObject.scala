@@ -9,7 +9,7 @@ class ScrubyObject(val klass: Symbol, val name: Option[Symbol], val ms: Map[Symb
   protected def predefMethods: Map[Symbol, ScrubyMethod] = {
     val _klass: (Symbol, ScrubyMethod) = 'class ->
       ScrubyMethod(ScrubyObjectContainer(ScrubyString(klass.name)))
-    val _initialize: (Symbol, ScrubyMethod) = 'initialize ->
+    val _initialize: (Symbol, ScrubyMethod) = 'new ->
       ScrubyMethod(ScrubyObjectContainer(ScrubyObject(klass, name, ms)))
     val nil: (Symbol, ScrubyMethod) = Symbol("nil?") ->
       ScrubyMethod(ScrubyObjectContainer(ScrubyFalseClass))
