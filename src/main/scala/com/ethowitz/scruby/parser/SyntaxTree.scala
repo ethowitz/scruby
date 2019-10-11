@@ -13,11 +13,10 @@ sealed trait SyntaxTree {
       }
       case Invocation(Some(recvr), msg, ts) =>
         Invocation(Some(withBoundVars(recvr)), msg, ts map withBoundVars)
-      case Invocation(None, msg, ts) => Invocation(None, msg, ts)
       case If(p, yes, no) =>
         If(withBoundVars(p), yes map withBoundVars, no map withBoundVars)
       case Unless(p, ts) => Unless(withBoundVars(p), ts map withBoundVars)
-      case lit => lit
+      case t => t
     }
 
     withBoundVars(tree)
@@ -29,6 +28,7 @@ case object SyntaxTree extends SyntaxTree
 case class KlassDef(name: Symbol, statements: List[SyntaxTree]) extends SyntaxTree
 case class MethodDef(name: Symbol, params: List[Symbol], body: List[SyntaxTree])
   extends SyntaxTree
+case class Assignment(name: Symbol, value: SyntaxTree) extends SyntaxTree
 case class ScrubyObjectContainer(obj: ScrubyObject) extends SyntaxTree
 case class Invocation(receiver: Option[SyntaxTree], message: Symbol, args: List[SyntaxTree])
   extends SyntaxTree

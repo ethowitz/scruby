@@ -14,6 +14,7 @@ object Lexer extends RegexParsers {
   }
 
   def ampersand = "&" ^^ (_ => Ampersand)
+  def assigner = "=" ^^ (_ => Assigner)
   def ivarPrefix = "@" ^^ (_ => IvarPrefix)
   def scopeResolver = "::" ^^ (_ => ScopeResolver)
   def comma = "," ^^ (_ => Comma)
@@ -51,11 +52,11 @@ object Lexer extends RegexParsers {
     "(0|[1-9]+[0-9]*)+\\.[0-9]+".r ^^ { n => FloatLiteral(n.toFloat) }
   }
 
-  private def parsing_group_1 = string | symbol | identifier | integer | float
+  private def parsingGroupOne = string | symbol | identifier | integer | float
 
-  private def parsing_group_2 = ampersand | ivarPrefix | scopeResolver | comma | period |
+  private def parsingGroupTwo = assigner | ampersand | ivarPrefix | scopeResolver | comma | period |
     openingParenthesis | closingParenthesis | openingCurlyBracket | closingCurlyBracket |
     openingSquareBracket | closingSquareBracket | not | colon | separator | whitespace
 
-  private def tokens: Parser[List[Token]] = phrase(rep1(parsing_group_1 | parsing_group_2))
+  private def tokens: Parser[List[Token]] = phrase(rep1(parsingGroupOne | parsingGroupTwo))
 }

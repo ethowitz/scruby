@@ -1,11 +1,12 @@
 package com.ethowitz.scruby.core
 
+import com.ethowitz.scruby.evaluator.MethodMap
 import com.ethowitz.scruby.evaluator.ScrubyMethod
 import com.ethowitz.scruby.parser.ScrubyObjectContainer
 
-object ScrubyNilClass extends ScrubyObject('NilClass, None, Map()) {
+object ScrubyNilClass extends ScrubyObject('NilClass, None, MethodMap.empty) {
   override def toString: String = "nil"
 
-  override def predefMethods: Map[Symbol, ScrubyMethod] =
+  override def predefMethods: MethodMap =
     super.predefMethods + (Symbol("nil?") -> ScrubyMethod(ScrubyObjectContainer(ScrubyTrueClass)))
 }

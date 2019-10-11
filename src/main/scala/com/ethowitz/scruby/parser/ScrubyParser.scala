@@ -30,6 +30,10 @@ object ScrubyParser extends Parsers {
     }
   }
 
+  def assignment: Parser[SyntaxTree] = (idsWithoutKeywords ~ Assigner ~ expression) ^^ {
+    case Identifier(name) ~ _ ~ value => Assignment(name, value)
+  }
+
   def expression: Parser[SyntaxTree] = conditional | invocation |
     invocationWithoutReceiver | literal
 

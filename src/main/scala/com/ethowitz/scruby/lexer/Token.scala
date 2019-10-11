@@ -39,7 +39,7 @@ case object Whitespace extends Token
 //case object BITWISE_AND extends Token
 //case object BITWISE_OR extends Token
 //case object MODULUS extends Token
-//case object Assigner extends Token
+case object Assigner extends Token
 case object IvarPrefix extends Token
 case object MethodInvoker extends Token
 case object ScopeResolver extends Token
