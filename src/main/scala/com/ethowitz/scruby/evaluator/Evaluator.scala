@@ -8,7 +8,7 @@ import scala.annotation.tailrec
 // --> already halfway there since evaluation states contain the previously-computed value
 // TODO: include syntax tree to evaluate in EvaluationState?
 object Evaluator {
-  def apply(ts: List[SyntaxTree]) = evals(ts, EvaluationState.start)
+  def apply(ts: List[SyntaxTree]): EvaluationState = evals(ts, EvaluationState.start)
 
   def evals(ts: List[SyntaxTree], e: EvaluationState): EvaluationState = ts match {
     case Nil => e
@@ -16,6 +16,7 @@ object Evaluator {
   }
 
   // scalastyle:off cyclomatic.complexity
+  // scalastyle:off method.length
   def eval(t: SyntaxTree, e: EvaluationState): EvaluationState = {
     def evalAssignment(name: Symbol, value: SyntaxTree): EvaluationState = {
       val EvaluationState(v, ks, ls, self) = eval(value, e)
@@ -71,7 +72,7 @@ object Evaluator {
     // 3. have all eval methods return trys or eithers? I think we want to differentiate between
     //    Scala exceptions and Ruby exceptions
     //
-    // maybe it makes sense to treat errors no different from other values. this might make it 
+    // maybe it makes sense to treat errors no different from other values. this might make it
     // easy to implement `rescue` later down the road
     def evalInvocation(recvr: Option[SyntaxTree], msg: Symbol, args: List[SyntaxTree]): EvaluationState = {
       e.localVars get msg match {
@@ -86,11 +87,15 @@ object Evaluator {
           }
           receivingState.value.methods get msg match {
             case Some(method) => args match {
-              case Nil => ScrubyMethod.invoke(method, Nil, ts => evals(ts, receivingState.withSelf(receivingState.value))).withLocalVars(receivingState.localVars)
-              case ts => 
-                val evaldArgs = args.scanLeft(receivingState) { (acc, t) => eval(t, acc) }
+              case Nil =>
+                val state = receivingState.withSelf(receivingState.value)
 
-                ScrubyMethod.invoke(method, evaldArgs.map(_.value), ts => evals(ts, evaldArgs.last.withSelf(receivingState.value))).withLocalVars(evaldArgs.last.localVars)
+                ScrubyMethod.invoke(method, Nil, ts => evals(ts, state)).withLocalVars(receivingState.localVars)
+              case ts =>
+                val evaldArgs = args.scanLeft(receivingState) { (acc, t) => eval(t, acc) }
+                val state = evaldArgs.last.withSelf(receivingState.value)
+
+                ScrubyMethod.invoke(method, evaldArgs.map(_.value), ts => evals(ts, state)).withLocalVars(evaldArgs.last.localVars)
             }
             case None => throw new Exception(s"undefined method `${msg}' for ${receivingState.value}")
           }
@@ -118,7 +123,7 @@ object Evaluator {
       // TODO: fake implementation of constants, probably want a ScrubyConstant derivation of
       // ScrubyObject to allow for assignment of constants to vars. also probably want to store
       // constants in a Set
-      case Constant(name) => evalConstant(name) 
+      case Constant(name) => evalConstant(name)
       case String_(s) => e.withValue(ScrubyString(s))
       // TODO: fake implementation of Symbol, put em in a Set
       case Symbol_(s) => e.withValue(ScrubySymbol(s))

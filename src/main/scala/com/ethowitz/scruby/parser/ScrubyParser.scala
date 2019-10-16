@@ -84,7 +84,7 @@ object ScrubyParser extends Parsers {
 
   def invocationWithoutReceiver: Parser[Invocation] = {
     (message(idsWithoutKeywords)) ^^ {
-      case invWithoutReceiver => invWithoutReceiver(None) 
+      case invWithoutReceiver => invWithoutReceiver(None)
     }
   }
 

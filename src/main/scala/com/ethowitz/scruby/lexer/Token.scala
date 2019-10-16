@@ -2,6 +2,7 @@ package com.ethowitz.scruby.lexer
 
 sealed trait Token
 
+// scalastyle:off number.of.types
 case class StringLiteral(s: String) extends Token
 case class SymbolLiteral(s: String) extends Token
 case class IntegerLiteral(n: Integer) extends Token
@@ -21,7 +22,7 @@ case object Elsif extends Token
 case object Else extends Token
 case object End extends Token
 case object Ampersand extends Token
-case object Comment extends Token 
+case object Comment extends Token
 case object Arrow extends Token
 case object Backslash extends Token
 case object Separator extends Token

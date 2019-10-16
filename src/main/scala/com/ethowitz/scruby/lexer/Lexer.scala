@@ -4,7 +4,7 @@ import com.ethowitz.scruby.exceptions.LexerError
 import scala.util.parsing.combinator._
 
 object Lexer extends RegexParsers {
-  override def skipWhitespace = false
+  override def skipWhitespace: Boolean = false
 
   def apply(code: String): Either[LexerError, List[Token]] = {
     parse(tokens, code) match {
@@ -13,24 +13,24 @@ object Lexer extends RegexParsers {
     }
   }
 
-  def ampersand = "&" ^^ (_ => Ampersand)
-  def assigner = "=" ^^ (_ => Assigner)
-  def ivarPrefix = "@" ^^ (_ => IvarPrefix)
-  def scopeResolver = "::" ^^ (_ => ScopeResolver)
-  def comma = "," ^^ (_ => Comma)
-  def period = "." ^^ (_ => Period)
-  def openingParenthesis = "(" ^^ (_ => OpeningParenthesis)
-  def closingParenthesis = ")" ^^ (_ => ClosingParenthesis)
-  def openingCurlyBracket = "{" ^^ (_ => OpeningCurlyBracket)
-  def closingCurlyBracket = "}" ^^ (_ => ClosingCurlyBracket)
-  def openingSquareBracket = "[" ^^ (_ => OpeningSquareBracket)
-  def closingSquareBracket = "]" ^^ (_ => ClosingSquareBracket)
-  def not = "!" ^^ (_ => Not)
-  def colon = ":" ^^ (_ => Colon)
-  def arrow = "=>" ^^ (_ => Arrow)
-  def backslash = "\\" ^^ (_ => Backslash)
-  def separator = "[\n|;|\r\f]+".r ^^ (_ => Separator)
-  def whitespace = "[ ]+".r ^^ (_ => Whitespace)
+  def ampersand: Parser[Token] = "&" ^^ (_ => Ampersand)
+  def assigner: Parser[Token] = "=" ^^ (_ => Assigner)
+  def ivarPrefix: Parser[Token] = "@" ^^ (_ => IvarPrefix)
+  def scopeResolver: Parser[Token] = "::" ^^ (_ => ScopeResolver)
+  def comma: Parser[Token] = "," ^^ (_ => Comma)
+  def period: Parser[Token] = "." ^^ (_ => Period)
+  def openingParenthesis: Parser[Token] = "(" ^^ (_ => OpeningParenthesis)
+  def closingParenthesis: Parser[Token] = ")" ^^ (_ => ClosingParenthesis)
+  def openingCurlyBracket: Parser[Token] = "{" ^^ (_ => OpeningCurlyBracket)
+  def closingCurlyBracket: Parser[Token] = "}" ^^ (_ => ClosingCurlyBracket)
+  def openingSquareBracket: Parser[Token] = "[" ^^ (_ => OpeningSquareBracket)
+  def closingSquareBracket: Parser[Token] = "]" ^^ (_ => ClosingSquareBracket)
+  def not: Parser[Token] = "!" ^^ (_ => Not)
+  def colon: Parser[Token] = ":" ^^ (_ => Colon)
+  def arrow: Parser[Token] = "=>" ^^ (_ => Arrow)
+  def backslash: Parser[Token] = "\\" ^^ (_ => Backslash)
+  def separator: Parser[Token] = "[\n|;|\r\f]+".r ^^ (_ => Separator)
+  def whitespace: Parser[Token] = "[ ]+".r ^^ (_ => Whitespace)
 
   def constant: Parser[ConstantToken] = {
     "[A-Z_=<>%&\\*\\|][a-zA-Z0-9_]*[?!]?".r ^^ { s => ConstantToken(s) }

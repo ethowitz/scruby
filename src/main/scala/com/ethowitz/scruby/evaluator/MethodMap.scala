@@ -3,8 +3,10 @@ package com.ethowitz.scruby.evaluator
 class MethodMap private(m: Map[Symbol, ScrubyMethod]) {
   private val internalMap = m
 
+  // scalastyle:off method.name
   def +(t: (Symbol, ScrubyMethod)): MethodMap = new MethodMap(internalMap + t)
   def ++(other: MethodMap): MethodMap = new MethodMap(internalMap ++ other.internalMap)
+  // scalastyle:on method.name
 
   // def get: Symbol => Option[ScrubyMethod] = internalMap.get
   def get(key: Symbol): Option[ScrubyMethod] = internalMap get key

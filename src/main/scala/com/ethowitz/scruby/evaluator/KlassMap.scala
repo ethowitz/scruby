@@ -5,7 +5,9 @@ import com.ethowitz.scruby.core.ScrubyObject
 class KlassMap private(m: Map[Symbol, ScrubyObject]) {
   private val internalMap = m
 
-  def +(t: (Symbol, ScrubyObject)) = new KlassMap(internalMap + t)
+  // scalastyle:off method.name
+  def +(t: (Symbol, ScrubyObject)): KlassMap = new KlassMap(internalMap + t)
+  // scalastyle:on method.name
 
   // def get: symbol => option[scrubymethod] = internalmap.get
   def get(key: Symbol): Option[ScrubyObject] = internalMap get key
