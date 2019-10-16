@@ -8,6 +8,8 @@ case class EvaluationState(value: ScrubyObject, klasses: KlassMap, localVars: Va
     EvaluationState(value, klasses, localVars, Some(s))
 
   def withValue(v: ScrubyObject): EvaluationState = EvaluationState(v, klasses, localVars, self)
+
+  def withLocalVars(vs: VariableMap): EvaluationState = EvaluationState(value, klasses, vs, self)
 }
 
 object EvaluationState {

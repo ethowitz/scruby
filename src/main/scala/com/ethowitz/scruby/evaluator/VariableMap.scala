@@ -6,8 +6,9 @@ class VariableMap private(m: Map[Symbol, ScrubyObject]) {
   private val internalMap = m
 
   def +(t: (Symbol, ScrubyObject)) = new VariableMap(internalMap + t)
-  def get(key: Symbol) = internalMap.get(key)
-  def iterator = internalMap.iterator
+
+  // def get: symbol => option[scrubymethod] = internalmap.get
+  def get(key: Symbol): Option[ScrubyObject] = internalMap get key
 }
 
 object VariableMap {

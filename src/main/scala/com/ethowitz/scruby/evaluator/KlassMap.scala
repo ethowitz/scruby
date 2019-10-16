@@ -7,12 +7,8 @@ class KlassMap private(m: Map[Symbol, ScrubyObject]) {
 
   def +(t: (Symbol, ScrubyObject)) = new KlassMap(internalMap + t)
 
-  def get(key: Symbol) = internalMap get key match {
-    case Some(method) => method
-    case None => throw new Exception(s"class ${key.toString} not found")
-  }
-
-  def iterator = internalMap.iterator
+  // def get: symbol => option[scrubymethod] = internalmap.get
+  def get(key: Symbol): Option[ScrubyObject] = internalMap get key
 }
 
 object KlassMap {

@@ -32,8 +32,12 @@ object Lexer extends RegexParsers {
   def separator = "[\n|;|\r\f]+".r ^^ (_ => Separator)
   def whitespace = "[ ]+".r ^^ (_ => Whitespace)
 
+  def constant: Parser[ConstantToken] = {
+    "[A-Z_=<>%&\\*\\|][a-zA-Z0-9_]*[?!]?".r ^^ { s => ConstantToken(s) }
+  }
+
   def identifier: Parser[IdentifierToken] = {
-    "[a-zA-Z_=<>%&\\*\\|][a-zA-Z0-9_]*[?!]?".r ^^ { s => IdentifierToken(s) }
+    "[a-z_=<>%&\\*\\|][a-zA-Z0-9_]*[?!]?".r ^^ { s => IdentifierToken(s) }
   }
 
   def string: Parser[StringLiteral] = {
@@ -52,11 +56,11 @@ object Lexer extends RegexParsers {
     "(0|[1-9]+[0-9]*)+\\.[0-9]+".r ^^ { n => FloatLiteral(n.toFloat) }
   }
 
-  private def parsingGroupOne = string | symbol | identifier | integer | float
+  private def parsingGroup = string | symbol | integer | float | assigner | ampersand | ivarPrefix |
+    identifier | scopeResolver | comma | period | openingParenthesis | closingParenthesis |
+    openingCurlyBracket | closingCurlyBracket | openingSquareBracket | closingSquareBracket | not |
+    colon | separator | whitespace
 
-  private def parsingGroupTwo = assigner | ampersand | ivarPrefix | scopeResolver | comma | period |
-    openingParenthesis | closingParenthesis | openingCurlyBracket | closingCurlyBracket |
-    openingSquareBracket | closingSquareBracket | not | colon | separator | whitespace
 
-  private def tokens: Parser[List[Token]] = phrase(rep1(parsingGroupOne | parsingGroupTwo))
+  private def tokens: Parser[List[Token]] = phrase(rep1(parsingGroup))
 }

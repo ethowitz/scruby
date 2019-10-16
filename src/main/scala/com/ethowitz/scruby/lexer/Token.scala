@@ -11,6 +11,7 @@ case object FalseLiteral extends Token
 case object Not extends Token
 case object NilLiteral extends Token
 case class IdentifierToken(name: String) extends Token
+case class ConstantToken(name: String) extends Token
 case object Klass extends Token
 case object Module extends Token
 case object Def extends Token

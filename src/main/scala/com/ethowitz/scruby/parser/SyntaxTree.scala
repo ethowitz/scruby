@@ -36,7 +36,9 @@ case class NotSyntaxTree(exp: SyntaxTree) extends SyntaxTree
 case class If(predicate: SyntaxTree, yesBranch: List[SyntaxTree], noBranch: List[SyntaxTree])
   extends SyntaxTree
 case class Unless(predicate: SyntaxTree, body: List[SyntaxTree]) extends SyntaxTree
+case class IvarIdentifier(name: Symbol) extends SyntaxTree
 case class Identifier(name: Symbol) extends SyntaxTree
+case class Constant(name: Symbol) extends SyntaxTree
 case class Array_(arr: Seq[Any]) extends SyntaxTree
 case class Hash(h: Map[Any, Any]) extends SyntaxTree
 case class String_(s: String) extends SyntaxTree

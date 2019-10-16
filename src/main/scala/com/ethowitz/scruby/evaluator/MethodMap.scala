@@ -3,15 +3,11 @@ package com.ethowitz.scruby.evaluator
 class MethodMap private(m: Map[Symbol, ScrubyMethod]) {
   private val internalMap = m
 
-  def +(t: (Symbol, ScrubyMethod)) = new MethodMap(internalMap + t)
-  def ++(other: MethodMap) = new MethodMap(internalMap ++ other.internalMap)
+  def +(t: (Symbol, ScrubyMethod)): MethodMap = new MethodMap(internalMap + t)
+  def ++(other: MethodMap): MethodMap = new MethodMap(internalMap ++ other.internalMap)
 
-  def get(key: Symbol) = internalMap get key match {
-    case Some(method) => method
-    case None => throw new Exception(s"method ${key.toString} not found")
-  }
-
-  def iterator = internalMap.iterator
+  // def get: Symbol => Option[ScrubyMethod] = internalMap.get
+  def get(key: Symbol): Option[ScrubyMethod] = internalMap get key
 }
 
 object MethodMap {

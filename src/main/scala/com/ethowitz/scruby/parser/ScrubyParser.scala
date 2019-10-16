@@ -34,7 +34,7 @@ object ScrubyParser extends Parsers {
     case Identifier(name) ~ _ ~ value => Assignment(name, value)
   }
 
-  def expression: Parser[SyntaxTree] = conditional | invocation |
+  def expression: Parser[SyntaxTree] = assignment | conditional | invocation |
     invocationWithoutReceiver | literal
 
   def sequence[A](parser: Parser[A]): Parser[List[A]] = {
@@ -58,8 +58,16 @@ object ScrubyParser extends Parsers {
     })
   }
 
+  def constant: Parser[Constant] = {
+    accept("constant", { case ConstantToken(name) => Constant(Symbol(name)) })
+  }
+
   def identifier: Parser[Identifier] = {
     accept("identifier", { case IdentifierToken(name) => Identifier(Symbol(name)) })
+  }
+
+  def ivarIdentifier: Parser[IvarIdentifier] = (IvarPrefix ~> identifier) ^^ {
+    case IdentifierToken(name) => IvarIdentifier(name)
   }
 
   def iff: Parser[If] = {
