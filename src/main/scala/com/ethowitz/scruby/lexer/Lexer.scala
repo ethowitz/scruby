@@ -7,7 +7,7 @@ object Lexer extends RegexParsers {
   override def skipWhitespace: Boolean = false
 
   def apply(code: String): Either[LexerError, List[Token]] = {
-    parse(tokens, code) match {
+    parse(tokens, code.trim) match {
       case NoSuccess(msg, _) => Left(LexerError(msg))
       case Success(result, _) => Right(result.filter(_ != Whitespace))
     }
