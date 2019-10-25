@@ -1,5 +1,8 @@
 package com.ethowitz.scruby.core
 
-object ScrubyTrueClass extends ScrubyObject('TrueClass, None, Map()) {
+import com.ethowitz.scruby.evaluator.MethodMap
+import com.ethowitz.scruby.evaluator.VariableMap
+
+object ScrubyTrueClass extends ScrubyObject('TrueClass, None, MethodMap.empty, VariableMap.empty) {
   override def toString: String = "true"
 }
