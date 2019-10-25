@@ -11,6 +11,7 @@ class VariableMap private(m: Map[Symbol, ScrubyObject]) {
 
   // def get: symbol => option[scrubymethod] = internalmap.get
   def get(key: Symbol): Option[ScrubyObject] = internalMap get key
+  def keys = internalMap.keys
 }
 
 object VariableMap {

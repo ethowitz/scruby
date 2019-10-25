@@ -56,10 +56,10 @@ object Lexer extends RegexParsers {
     "(0|[1-9]+[0-9]*)+\\.[0-9]+".r ^^ { n => FloatLiteral(n.toFloat) }
   }
 
-  private def parsingGroup = string | symbol | integer | float | assigner | ampersand | ivarPrefix |
-    identifier | scopeResolver | comma | period | openingParenthesis | closingParenthesis |
-    openingCurlyBracket | closingCurlyBracket | openingSquareBracket | closingSquareBracket | not |
-    colon | separator | whitespace
+  private def parsingGroup = string | symbol | integer | float | assigner | ampersand | constant |
+    ivarPrefix | identifier | scopeResolver | comma | period | openingParenthesis |
+    closingParenthesis | openingCurlyBracket | closingCurlyBracket | openingSquareBracket |
+    closingSquareBracket | not | colon | separator | whitespace
 
 
   private def tokens: Parser[List[Token]] = phrase(rep1(parsingGroup))

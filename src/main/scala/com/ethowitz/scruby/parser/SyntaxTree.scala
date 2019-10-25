@@ -28,7 +28,8 @@ case object SyntaxTree extends SyntaxTree
 case class KlassDef(name: Symbol, statements: List[SyntaxTree]) extends SyntaxTree
 case class MethodDef(name: Symbol, params: List[Symbol], body: List[SyntaxTree])
   extends SyntaxTree
-case class Assignment(name: Symbol, value: SyntaxTree) extends SyntaxTree
+case class LocalVarAssignment(name: Symbol, value: SyntaxTree) extends SyntaxTree
+case class IvarAssignment(name: Symbol, value: SyntaxTree) extends SyntaxTree
 case class ScrubyObjectContainer(obj: ScrubyObject) extends SyntaxTree
 case class Invocation(receiver: Option[SyntaxTree], message: Symbol, args: List[SyntaxTree])
   extends SyntaxTree
