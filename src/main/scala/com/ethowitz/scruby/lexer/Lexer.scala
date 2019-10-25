@@ -3,6 +3,7 @@ package com.ethowitz.scruby.lexer
 import com.ethowitz.scruby.exceptions.LexerError
 import com.ethowitz.scruby.exceptions.LexerError
 import com.ethowitz.scruby.exceptions.LexerError
+import com.ethowitz.scruby.exceptions.LexerError
 import scala.util.parsing.combinator._
 
 object Lexer extends RegexParsers {
