@@ -2,6 +2,7 @@ package com.ethowitz.scruby.evaluator
 
 import com.ethowitz.scruby.parser._
 import com.ethowitz.scruby.core._
+import com.ethowitz.scruby.parser._
 import scala.annotation.tailrec
 
 object Evaluator {
