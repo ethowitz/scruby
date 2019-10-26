@@ -10,14 +10,14 @@ import com.ethowitz.scruby.parser._
 object Evaluator {
   def apply(ts: List[SyntaxTree]) = evals(ts, EvaluationState.start)
 
-  def evals(ts: List[SyntaxTree], e: EvaluationState): EvaluationState = ts match {
+  def evals(ts: List[SyntaxTree], e: EvaluationState) = ts match {
     case Nil => e
     case t :: ts => evals(ts, eval(t, e))
   }
 
   // scalastyle:off cyclomatic.complexity
   // scalastyle:off method.length
-  def eval(t: SyntaxTree, e: EvaluationState): EvaluationState = {
+  def eval(t: SyntaxTree, e: EvaluationState) = {
     def evalIvarAssignment(name: Symbol, value: SyntaxTree): EvaluationState = {
       val EvaluationState(v, ks, ls, self) = eval(value, e)
 
