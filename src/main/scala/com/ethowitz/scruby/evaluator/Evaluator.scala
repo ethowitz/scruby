@@ -1,12 +1,14 @@
 package com.ethowitz.scruby.evaluator
 
-import com.ethowitz.scruby.parser._
 import com.ethowitz.scruby.core._
-import com.ethowitz.scruby.parser._
 import scala.annotation.tailrec
+import com.ethowitz.scruby.parser._
+import com.ethowitz.scruby.parser._
+import com.ethowitz.scruby.parser._
+import com.ethowitz.scruby.parser._
 
 object Evaluator {
-  def apply(ts: List[SyntaxTree]): EvaluationState = evals(ts, EvaluationState.start)
+  def apply(ts: List[SyntaxTree]) = evals(ts, EvaluationState.start)
 
   def evals(ts: List[SyntaxTree], e: EvaluationState): EvaluationState = ts match {
     case Nil => e
