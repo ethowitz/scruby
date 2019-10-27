@@ -5,8 +5,12 @@ import com.ethowitz.scruby.evaluator.ScrubyMethod
 import com.ethowitz.scruby.evaluator.VariableMap
 import com.ethowitz.scruby.parser.ScrubyObjectContainer
 
-// TODO: do we need to store the name here?
-class ScrubyObject(val klass: Symbol, val name: Option[Symbol], val ms: MethodMap, val ivars: VariableMap) {
+class ScrubyObject(
+  val klass: Symbol,
+  val name: Option[Symbol],
+  val ms: MethodMap,
+  val ivars: VariableMap
+) {
   def methods: MethodMap = predefMethods ++ ms
 
   def withMethod(method: (Symbol, ScrubyMethod)): ScrubyObject =

@@ -66,17 +66,27 @@ object Evaluator {
       EvaluationState(ScrubySymbol(name), klasses + (name -> self.get), localVars, e.self)
     }
 
-    def evalMethodDef(name: Symbol, params: List[Symbol], ts: List[SyntaxTree]): EvaluationState = e.self match {
+    def evalMethodDef(name: Symbol, params: List[Symbol], ts: List[SyntaxTree]): EvaluationState =
+      e.self match {
+
       case Some(self) => e.withSelf(self.withMethod(name -> ScrubyMethod(params, ts)))
       case None => throw new Exception("cannot define method in global context")
     }
 
-    def evalIf(p: SyntaxTree, yeses: List[SyntaxTree], nos: List[SyntaxTree]): EvaluationState = eval(p, e) match {
-      case state @ EvaluationState(ScrubyFalseClass | ScrubyNilClass, ks, ls, self) => evals(nos, state)
+    def evalIf(p: SyntaxTree, yeses: List[SyntaxTree], nos: List[SyntaxTree]): EvaluationState =
+      eval(p, e) match {
+
+      case state @ EvaluationState(ScrubyFalseClass | ScrubyNilClass, ks, ls, self) =>
+        evals(nos, state)
       case state => evals(yeses, state)
     }
 
-    def evalInvocation(recvr: Option[SyntaxTree], msg: Symbol, args: List[SyntaxTree]): EvaluationState = {
+    // this method is impossible to understand
+    def evalInvocation(
+      recvr: Option[SyntaxTree],
+      msg: Symbol,
+      args: List[SyntaxTree]
+    ): EvaluationState = {
       val receivingState = recvr match {
         case Some(r) => eval(r, e)
         case None => e.self match {
@@ -89,20 +99,41 @@ object Evaluator {
         case Some(method) =>
           val evaldArgs = args.toSeq.scanLeft(receivingState) { (acc, t) => eval(t, acc) }
           val state = evaldArgs.last
-          
+
           val EvaluationState(returnValue, _, _, newSelf) = if (msg == 'new) {
-            ScrubyConstructor.invoke(method, evaldArgs.map(_.value), ts => evals(ts, state.withSelf(receivingState.value).withLocalVars(VariableMap.empty)))
+            ScrubyConstructor.invoke(
+              method,
+              evaldArgs.map(_.value),
+              ts => evals(
+                ts,
+                state.withSelf(receivingState.value).withLocalVars(VariableMap.empty)))
           } else {
-            ScrubyMethod.invoke(method, evaldArgs.map(_.value), ts => evals(ts, state.withSelf(receivingState.value).withLocalVars(VariableMap.empty)))
+            ScrubyMethod.invoke(
+              method,
+              evaldArgs.map(_.value),
+              ts => evals(
+                ts,
+                state.withSelf(receivingState.value).withLocalVars(VariableMap.empty)))
           }
 
           recvr match {
             case Some(Constant(name)) => state.withValue(returnValue)
-            case Some(Identifier(name)) => EvaluationState(returnValue, state.klasses, state.localVars + (name -> newSelf.get), state.self)
-            case Some(IvarIdentifier(name)) => EvaluationState(returnValue, state.klasses, state.localVars, Some(state.self.get.withIvar(name -> newSelf.get)))
+            case Some(Identifier(name)) =>
+              EvaluationState(
+                returnValue,
+                state.klasses,
+                state.localVars + (name -> newSelf.get),
+                state.self)
+            case Some(IvarIdentifier(name)) =>
+              EvaluationState(
+                returnValue,
+                state.klasses,
+                state.localVars,
+                Some(state.self.get.withIvar(name -> newSelf.get)))
             case None => EvaluationState(returnValue, state.klasses, state.localVars, newSelf)
           }
-        case None => throw new Exception(s"undefined method `${msg.toString}' for ${receivingState.value}")
+        case None =>
+          throw new Exception(s"undefined method `${msg.toString}' for ${receivingState.value}")
       }
     }
 

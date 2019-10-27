@@ -27,8 +27,6 @@ case object Arrow extends Token
 case object Backslash extends Token
 case object Separator extends Token
 case object Whitespace extends Token
-// TODO: syntactic sugar for the following method invocations:
-//
 //case object PLUS extends Token
 //case object MINUS extends Token
 //case object MULTIPLIED_BY extends Token
