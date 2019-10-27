@@ -30,8 +30,10 @@ object ScrubyParser extends Parsers {
     }
   }
 
-  def ivarAssignment: Parser[SyntaxTree] = (IvarPrefix ~> (identifier | constant) ~ Assigner ~ expression) ^^ {
-    case Identifier(name) ~ _ ~ value => IvarAssignment(name, value)
+  def ivarAssignment: Parser[SyntaxTree] = {
+    (IvarPrefix ~> (identifier | constant) ~ Assigner ~ expression) ^^ {
+      case Identifier(name) ~ _ ~ value => IvarAssignment(name, value)
+    }
   }
 
   def localVarAssignment: Parser[SyntaxTree] = (nonKeywordIdentifier ~ Assigner ~ expression) ^^ {
@@ -41,9 +43,11 @@ object ScrubyParser extends Parsers {
   def expression: Parser[SyntaxTree] = ivarAssignment | localVarAssignment | conditional |
     invocation | ivarIdentifier | nonKeywordIdentifier | literal
 
-  def sequence[A](parser: Parser[A]): Parser[List[A]] = (repsep(parser, Separator) <~ Separator).? ^^ {
-    case Some(exps) => exps
-    case None => List[A]()
+  def sequence[A](parser: Parser[A]): Parser[List[A]] = {
+    (repsep(parser, Separator) <~ Separator).? ^^ {
+      case Some(exps) => exps
+      case None => List[A]()
+    }
   }
 
   def defToken: Parser[Token] = elem(IdentifierToken("def"))
@@ -69,7 +73,8 @@ object ScrubyParser extends Parsers {
   }
 
   def iff: Parser[If] = (ifToken ~> expression ~ Separator ~ sequence(expression) ~ rep(elsif) ~
-      (elseToken ~ Separator ~ sequence(expression)).? ~ endToken) ^^ {
+    (elseToken ~ Separator ~ sequence(expression)).? ~ endToken) ^^ {
+
     case predicate ~ _ ~ yesBranch ~ elsifs ~ Some(_ ~ _~ noBranch) ~ _ =>
       If(predicate, yesBranch, elsifs.foldRight(noBranch) { (acc, ifExp) => List(acc(ifExp)) })
     case predicate ~ _ ~ yesBranch ~ elsifs ~ None ~ _ =>
@@ -80,8 +85,10 @@ object ScrubyParser extends Parsers {
     case recv ~ _ ~ inv => inv(Some(recv))
   }
 
-  def klassDef: Parser[KlassDef] = (klassToken ~> constant ~ Separator ~ sequence(definition) ~ endToken) ^^ {
-    case Constant(name) ~ _ ~ expressions ~  _ => KlassDef(name, expressions)
+  def klassDef: Parser[KlassDef] = {
+    (klassToken ~> constant ~ Separator ~ sequence(definition) ~ endToken) ^^ {
+      case Constant(name) ~ _ ~ expressions ~  _ => KlassDef(name, expressions)
+    }
   }
 
   def literal: Parser[SyntaxTree] = {
@@ -113,7 +120,8 @@ object ScrubyParser extends Parsers {
 
   def methodDef: Parser[MethodDef] = {
     (defToken ~> identifier ~ (OpeningParenthesis ~ repsep(nonKeywordIdentifier, Comma) ~
-        ClosingParenthesis).? ~ Separator ~ sequence(expression) ~ endToken) ^^ {
+      ClosingParenthesis).? ~ Separator ~ sequence(expression) ~ endToken) ^^ {
+
       case Identifier(name) ~ Some(_ ~ params ~ _) ~ _ ~ expressions ~ _ =>
         MethodDef(name, params.map(_.name), expressions)
       case Identifier(name) ~ None ~ _ ~ expressions ~ _ =>
@@ -123,7 +131,8 @@ object ScrubyParser extends Parsers {
 
   def leftmostReceiver: Parser[SyntaxTree] = {
     ((literal | conditional | nonKeywordIdentifier | ivarIdentifier | constant) ~
-        (Period ~ message(identifier) ~ receiver).?) ^^ {
+      (Period ~ message(identifier) ~ receiver).?) ^^ {
+
       //case recv ~ Some(_ ~ invWithoutReceiver ~ arg) => invWithoutReceiver(recv)
       case recv ~ None => recv
     }
@@ -136,8 +145,10 @@ object ScrubyParser extends Parsers {
     }
   }
 
-  def unless: Parser[Unless] = (unlessToken ~ expression ~ Separator ~ sequence(expression) ~ endToken) ^^ {
-    case _ ~ predicate ~ _ ~ expressions ~ _ => Unless(predicate, expressions)
+  def unless: Parser[Unless] = {
+    (unlessToken ~ expression ~ Separator ~ sequence(expression) ~ endToken) ^^ {
+      case _ ~ predicate ~ _ ~ expressions ~ _ => Unless(predicate, expressions)
+    }
   }
 }
 

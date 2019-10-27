@@ -11,8 +11,8 @@
  <check level="warning" class="org.scalastyle.scalariform.SpacesBeforePlusChecker" enabled="true"></check>
  <check level="warning" class="org.scalastyle.file.FileLineLengthChecker" enabled="true">
   <parameters>
-   <parameter name="maxLineLength"><![CDATA[160]]></parameter>
-   <parameter name="tabSize"><![CDATA[4]]></parameter>
+   <parameter name="maxLineLength">100</parameter>
+   <parameter name="tabSize">2</parameter>
   </parameters>
  </check>
  <check level="warning" class="org.scalastyle.scalariform.ClassNamesChecker" enabled="true">
@@ -89,5 +89,22 @@
  </check>
  <check level="warning" class="org.scalastyle.scalariform.PublicMethodsHaveTypeChecker" enabled="true"></check>
  <check level="warning" class="org.scalastyle.file.NewLineAtEofChecker" enabled="true"></check>
- <check level="warning" class="org.scalastyle.file.NoNewLineAtEofChecker" enabled="false"></check>
+ <check level="warning" class="org.scalastyle.scalriform.VarFieldChecker" enabled="true"></check>
+ <check level="warning" class="org.scalastyle.scalriform.VarLocalChecker" enabled="true"></check>
+ <check level="warning" class="org.scalastyle.scalriform.RedundantIfChecker" enabled="true"></check>
+ <check level="warning" class="org.scalastyle.scalriform.MultipleStringLiteralsChecker" enabled="true"></check>
+ <check level="warning" class="org.scalastyle.scalriform.LowerCasePatternMatchChecker" enabled="true"></check>
+ <check level="warning" class="org.scalastyle.scalriform.ImportGroupingChecker" enabled="true"></check>
+ <check level="warning" class="org.scalastyle.scalriform.EmptyInterpolatedStringChecker" enabled="true"></check>
+ <check level="warning" class="org.scalastyle.scalriform.EmptyClassChecker" enabled="true"></check>
+ <!--<check level="warning" enabled="true" class="org.scalastyle.file.IndentationChecker">-->
+ <!--<parameters>-->
+  <!--<parameter name="tabSize">2</parameter>-->
+ <!--</parameters>-->
+ <!--</check>-->
+ <check level="warning" class="org.scalastyle.scalariform.TodoCommentChecker" enabled="true">
+ <parameters>
+  <parameter name="words"><![CDATA[TODO|FIXME]]></parameter>
+ </parameters>
+ </check>
 </scalastyle>

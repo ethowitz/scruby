@@ -3,7 +3,9 @@ package com.ethowitz.scruby.core
 import com.ethowitz.scruby.evaluator.MethodMap
 import com.ethowitz.scruby.evaluator.VariableMap
 
-class ScrubyString(val s: String, ms: MethodMap) extends ScrubyObject('Class, Some('String), ms, VariableMap.empty) {
+class ScrubyString(val s: String, ms: MethodMap)
+  extends ScrubyObject('Class, Some('String), ms, VariableMap.empty) {
+
   override def toString: String = s
 }
 

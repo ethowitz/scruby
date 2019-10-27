@@ -13,7 +13,6 @@ class MethodMap private(m: Map[Symbol, ScrubyMethod]) {
   // scalastyle:on method.name
 
   def get(key: Symbol): Option[ScrubyMethod] = internalMap get key
-  def keys = internalMap.keys
 }
 
 object MethodMap {
