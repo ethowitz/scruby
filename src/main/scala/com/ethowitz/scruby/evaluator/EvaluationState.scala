@@ -3,7 +3,7 @@ package com.ethowitz.scruby.evaluator
 import com.ethowitz.scruby.core.RubyNilClass
 import com.ethowitz.scruby.core.RubyObject
 
-case class EvaluationState(
+final case class EvaluationState(
   value: RubyObject,
   klasses: KlassMap,
   localVars: VariableMap,

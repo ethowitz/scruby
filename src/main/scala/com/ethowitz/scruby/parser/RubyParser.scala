@@ -11,7 +11,7 @@ object RubyParser extends Parsers {
   def apply(tokens: Seq[Token]): Either[ParserError, List[SyntaxTree]] = {
     val reader = new TokenReader(tokens)
 
-    phrase(repsep(definition | expression, Separator))(reader) match {
+    phrase(repsep(definition | expression, SeparatorToken))(reader) match {
       case NoSuccess(msg, next) => Left(ParserError(msg))
       case Success(result, next) => Right(result)
     }
@@ -24,29 +24,31 @@ object RubyParser extends Parsers {
 
   def definition: Parser[SyntaxTree] = klassDef | methodDef
 
-  def elsif: Parser[List[SyntaxTree] => If] = {
-    (elsifToken ~> expression ~ Separator ~ sequence(expression)) ^^ {
-      case predicate ~ _ ~ yesBranch => If.curried(predicate)(yesBranch)
+  def elsif: Parser[List[SyntaxTree] => IfNode] = {
+    (elsifToken ~> expression ~ SeparatorToken ~ sequence(expression)) ^^ {
+      case predicate ~ _ ~ yesBranch =>
+        (noBranch: List[SyntaxTree]) => IfNode(predicate, yesBranch, noBranch)
     }
   }
 
   def ivarAssignment: Parser[SyntaxTree] = {
-    (IvarPrefix ~> (identifier | constant) ~ Assigner ~ expression) ^^ {
-      case Identifier(name) ~ _ ~ value => IvarAssignment(name, value)
+    (IvarPrefixToken ~> (identifier | constant) ~ AssignerToken ~ expression) ^^ {
+      case IdentifierNode(name) ~ _ ~ value => IvarAssignmentNode(name, value)
     }
   }
 
-  def localVarAssignment: Parser[SyntaxTree] = (nonKeywordIdentifier ~ Assigner ~ expression) ^^ {
-    case Identifier(name) ~ _ ~ value => LocalVarAssignment(name, value)
-  }
+  def localVarAssignment: Parser[SyntaxTree] =
+    (nonKeywordIdentifier ~ AssignerToken ~ expression) ^^ {
+      case IdentifierNode(name) ~ _ ~ value => LocalVarAssignmentNode(name, value)
+    }
 
   def expression: Parser[SyntaxTree] = ivarAssignment | localVarAssignment | conditional |
     invocation | ivarIdentifier | nonKeywordIdentifier | literal
 
   def sequence[A](parser: Parser[A]): Parser[List[A]] = {
-    (repsep(parser, Separator) <~ Separator).? ^^ {
-      case Some(exps) => exps
-      case None => List[A]()
+    (repsep(parser, SeparatorToken) <~ SeparatorToken).? ^^ {
+      case Some(as) => as
+      case None => List.empty[A]
     }
   }
 
@@ -58,80 +60,89 @@ object RubyParser extends Parsers {
   def elseToken: Parser[Token] = elem(IdentifierToken("else"))
   def unlessToken: Parser[Token] = elem(IdentifierToken("unless"))
 
-  def nonKeywordIdentifier: Parser[Identifier] = accept("identifier", {
-    case IdentifierToken(name) if !(keywords contains name) => Identifier(Symbol(name))
+  def nonKeywordIdentifier: Parser[IdentifierNode] = accept("identifier", {
+    case IdentifierToken(name) if !(keywords contains name) => IdentifierNode(Symbol(name))
   })
 
-  def constant: Parser[Constant] =
-    accept("constant", { case ConstantToken(name) => Constant(Symbol(name)) })
+  def constant: Parser[ConstantNode] =
+    accept("constant", { case ConstantToken(name) => ConstantNode(Symbol(name)) })
 
-  def identifier: Parser[Identifier] =
-    accept("identifier", { case IdentifierToken(name) => Identifier(Symbol(name)) })
+  def identifier: Parser[IdentifierNode] =
+    accept("identifier", { case IdentifierToken(name) => IdentifierNode(Symbol(name)) })
 
-  def ivarIdentifier: Parser[IvarIdentifier] = (IvarPrefix ~> identifier) ^^ {
-    case Identifier(name) => IvarIdentifier(name)
+  def ivarIdentifier: Parser[IvarIdentifierNode] = (IvarPrefixToken ~> identifier) ^^ {
+    case IdentifierNode(name) => IvarIdentifierNode(name)
   }
 
-  def iff: Parser[If] = (ifToken ~> expression ~ Separator ~ sequence(expression) ~ rep(elsif) ~
-    (elseToken ~ Separator ~ sequence(expression)).? ~ endToken) ^^ {
+  def iff: Parser[IfNode] = (ifToken ~> expression ~ SeparatorToken ~ sequence(expression) ~
+    rep(elsif) ~ (elseToken ~ SeparatorToken ~ sequence(expression)).? ~ endToken) ^^ {
 
     case predicate ~ _ ~ yesBranch ~ elsifs ~ Some(_ ~ _~ noBranch) ~ _ =>
-      If(predicate, yesBranch, elsifs.foldRight(noBranch) { (acc, ifExp) => List(acc(ifExp)) })
+      IfNode(
+        predicate,
+        yesBranch,
+        elsifs.foldRight(noBranch) { (acc: List[SyntaxTree] => IfNode, ifExp: List[SyntaxTree]) =>
+          List(acc(ifExp))
+        })
     case predicate ~ _ ~ yesBranch ~ elsifs ~ None ~ _ =>
-      If(predicate, yesBranch, elsifs.foldRight(List[If]()) { (acc, ifExp) => List(acc(ifExp)) })
+      IfNode(predicate, yesBranch, elsifs.foldRight(List.empty[IfNode]) { (acc, ifExp) =>
+        List(acc(ifExp))
+      })
   }
 
-  def invocation: Parser[Invocation] = (leftmostReceiver ~ Period ~ message(identifier)) ^^ {
-    case recv ~ _ ~ inv => inv(Some(recv))
-  }
+  def invocation: Parser[InvocationNode] =
+    (leftmostReceiver ~ PeriodToken ~ message(identifier)) ^^ {
+      case recv ~ _ ~ inv => inv(Some(recv))
+    }
 
-  def klassDef: Parser[KlassDef] = {
-    (klassToken ~> constant ~ Separator ~ sequence(definition) ~ endToken) ^^ {
-      case Constant(name) ~ _ ~ expressions ~  _ => KlassDef(name, expressions)
+  def klassDef: Parser[KlassDefNode] = {
+    (klassToken ~> constant ~ SeparatorToken ~ sequence(definition) ~ endToken) ^^ {
+      case ConstantNode(name) ~ _ ~ expressions ~  _ => KlassDefNode(name, expressions)
     }
   }
 
   def literal: Parser[SyntaxTree] = {
     accept("literal", {
-      case StringLiteral(s) => String_(s)
-      case SymbolLiteral(s) => Symbol_(Symbol(s))
-      case IntegerLiteral(n) => Integer_(n)
-      case FloatLiteral(n) => Float_(n)
-      case IdentifierToken("true") => True
-      case IdentifierToken("false") => False
-      case IdentifierToken("nil") => Nil_
+      case StringToken(s) => StringNode(s)
+      case SymbolToken(s) => SymbolNode(Symbol(s))
+      case IntegerToken(n) => IntegerNode(n)
+      case FloatToken(n) => FloatNode(n)
+      case IdentifierToken("true") => TrueNode
+      case IdentifierToken("false") => FalseNode
+      case IdentifierToken("nil") => NilNode
     })
   }
 
-  def message(id: Parser[Identifier]): Parser[Option[SyntaxTree] => Invocation] =
+  def message(id: Parser[IdentifierNode]): Parser[Option[SyntaxTree] => InvocationNode] =
     messageParens(id) | messageNoParens(id)
 
-  def messageNoParens(id: Parser[Identifier]): Parser[Option[SyntaxTree] => Invocation] = {
-    (id ~ repsep(expression, Comma)) ^^ {
-      case Identifier(name) ~ args => Invocation.curried(_: Option[SyntaxTree])(name)(args)
+  def messageNoParens(id: Parser[IdentifierNode]): Parser[Option[SyntaxTree] => InvocationNode] = {
+    (id ~ repsep(expression, CommaToken)) ^^ {
+      case IdentifierNode(name) ~ args => ts => InvocationNode(ts, name, args)
     }
   }
 
-  def messageParens(id: Parser[Identifier]): Parser[Option[SyntaxTree] => Invocation] = {
-    (id ~ OpeningParenthesis ~ repsep(expression, Comma) ~ ClosingParenthesis) ^^ {
-      case Identifier(name) ~ _ ~ args ~ _ => Invocation.curried(_: Option[SyntaxTree])(name)(args)
+  def messageParens(id: Parser[IdentifierNode]): Parser[Option[SyntaxTree] => InvocationNode] = {
+    (id ~ OpeningParenthesisToken ~ repsep(expression, CommaToken) ~ ClosingParenthesisToken) ^^ {
+      case IdentifierNode(name) ~ _ ~ args ~ _ =>
+        (self: Option[SyntaxTree]) => InvocationNode(self, name, args)
     }
   }
 
-  def methodDef: Parser[MethodDef] = {
-    (defToken ~> identifier ~ (OpeningParenthesis ~ repsep(nonKeywordIdentifier, Comma) ~
-      ClosingParenthesis).? ~ Separator ~ sequence(expression) ~ endToken) ^^ {
+  def methodDef: Parser[MethodDefNode] = {
+    (defToken ~> identifier ~ (OpeningParenthesisToken ~ repsep(nonKeywordIdentifier, CommaToken) ~
+      ClosingParenthesisToken).? ~ SeparatorToken ~ sequence(expression) ~ endToken) ^^ {
 
-      case Identifier(name) ~ Some(_ ~ params ~ _) ~ _ ~ expressions ~ _ =>
-        MethodDef(name, params.map(_.name), expressions)
-      case Identifier(name) ~ None ~ _ ~ expressions ~ _ =>
-        MethodDef(name, List[Symbol](), expressions)
+      case IdentifierNode(name) ~ Some(_ ~ params ~ _) ~ _ ~ expressions ~ _ =>
+        MethodDefNode(name, params.map(_.name), expressions)
+      case IdentifierNode(name) ~ None ~ _ ~ expressions ~ _ =>
+        MethodDefNode(name, List.empty[Symbol], expressions)
     }
   }
 
   def leftmostReceiver: Parser[SyntaxTree] = {
     ((literal | conditional | nonKeywordIdentifier | ivarIdentifier | constant) ~
-      (Period ~ message(identifier) ~ receiver).?) ^^ {
+      (PeriodToken ~ message(identifier) ~ receiver).?) ^^ {
 
       //case recv ~ Some(_ ~ invWithoutReceiver ~ arg) => invWithoutReceiver(recv)
       case recv ~ None => recv
@@ -140,22 +151,26 @@ object RubyParser extends Parsers {
   }
 
   def receiver: Parser[SyntaxTree] = {
-    ((literal | conditional | identifier) ~ (Period ~ message(identifier) ~ receiver).?) ^^ {
+    ((literal | conditional | identifier) ~ (PeriodToken ~ message(identifier) ~ receiver).?) ^^ {
       //case recv ~ Some(_ ~ invWithoutReceiver ~ arg) => invWithoutReceiver(recv)
       case recv ~ None => recv
       case _ => throw new Exception("unimplemented")
     }
   }
 
-  def unless: Parser[Unless] = {
-    (unlessToken ~ expression ~ Separator ~ sequence(expression) ~ endToken) ^^ {
-      case _ ~ predicate ~ _ ~ expressions ~ _ => Unless(predicate, expressions)
+  def unless: Parser[UnlessNode] = {
+    (unlessToken ~ expression ~ SeparatorToken ~ sequence(expression) ~ endToken) ^^ {
+      case _ ~ predicate ~ _ ~ expressions ~ _ => UnlessNode(predicate, expressions)
     }
   }
 }
 
 class TokenReader(tokens: Seq[Token]) extends Reader[Token] {
-  override def first: Token = tokens.head
+  override def first: Token = tokens.headOption match {
+    case Some(token) => token
+    case None => throw new Exception("attempted to retrieve token from empty list")
+  }
+
   override def atEnd: Boolean = tokens.isEmpty
   override def pos: Position = NoPosition
   override def rest: Reader[Token] = new TokenReader(tokens.tail)

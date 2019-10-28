@@ -1,3 +1,3 @@
 package com.ethowitz.scruby.exceptions
 
-case class ParserError(msg: String) extends CompilationError
+final case class ParserError(msg: String) extends CompilationError

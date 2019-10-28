@@ -16,6 +16,10 @@ object RubyConstructor {
   ): EvaluationState = {
     val EvaluationState(v, ks, ls, s) = RubyMethod.invoke(method, args, evals)
 
-    EvaluationState(s.get, ks, ls, s)
+    EvaluationState(
+      s.getOrElse(throw new Exception("method invocation resulted in null self")),
+      ks,
+      ls,
+    s)
   }
 }

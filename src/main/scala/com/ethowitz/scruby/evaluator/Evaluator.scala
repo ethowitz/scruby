@@ -19,7 +19,7 @@ object Evaluator {
 
       self match {
         case Some(s) => EvaluationState(v, ks, ls, Some(s.withIvar(name -> v)))
-        case None => throw new Exception(s"cannot define ivar in global context")
+        case None => throw new Exception("cannot define ivar in global context")
       }
     }
 
@@ -62,15 +62,19 @@ object Evaluator {
       val EvaluationState(_, klasses, localVars, self) =
         evals(ts, e.withSelf(RubyObject('Class)))
 
-      EvaluationState(RubySymbol(name), klasses + (name -> self.get), localVars, e.self)
+      val errorMessage = "scruby bug: class def evaluation resulted in null self"
+      EvaluationState(
+        RubySymbol(name),
+        klasses + (name -> self.getOrElse(throw new Exception(errorMessage))),
+        localVars,
+        e.self)
     }
 
     def evalMethodDef(name: Symbol, params: List[Symbol], ts: List[SyntaxTree]): EvaluationState =
       e.self match {
-
-      case Some(self) => e.withSelf(self.withMethod(name -> RubyMethod(params, ts)))
-      case None => throw new Exception("cannot define method in global context")
-    }
+        case Some(self) => e.withSelf(self.withMethod(name -> RubyMethod(params, ts)))
+        case None => throw new Exception("cannot define method in global context")
+      }
 
     def evalIf(p: SyntaxTree, yeses: List[SyntaxTree], nos: List[SyntaxTree]): EvaluationState =
       eval(p, e) match {
@@ -97,7 +101,10 @@ object Evaluator {
       receivingState.value.methods get msg match {
         case Some(method) =>
           val evaldArgs = args.toSeq.scanLeft(receivingState) { (acc, t) => eval(t, acc) }
-          val state = evaldArgs.last
+          val state = evaldArgs.lastOption match {
+            case Some(s) => s
+            case None => throw new Exception("Sequence#scanLeft returned an empty sequence")
+          }
 
           val EvaluationState(returnValue, _, _, newSelf) = if (msg == 'new) {
             RubyConstructor.invoke(
@@ -115,19 +122,23 @@ object Evaluator {
                 state.withSelf(receivingState.value).withLocalVars(VariableMap.empty)))
           }
 
+          val errorMessage = "scruby bug: expression evaluation resulted in null self"
           recvr match {
-            case Some(Identifier(name)) =>
+            case Some(IdentifierNode(name)) =>
               EvaluationState(
                 returnValue,
                 state.klasses,
-                state.localVars + (name -> newSelf.get),
+                state.localVars + (name -> newSelf.getOrElse(throw new Exception(errorMessage))),
                 state.self)
-            case Some(IvarIdentifier(name)) =>
+            case Some(IvarIdentifierNode(name)) =>
+              val selfWithNewIvar = state.self.getOrElse(throw new Exception(errorMessage)).
+                withIvar(name -> newSelf.getOrElse(throw new Exception(errorMessage)))
+
               EvaluationState(
                 returnValue,
                 state.klasses,
                 state.localVars,
-                Some(state.self.get.withIvar(name -> newSelf.get)))
+                Some(selfWithNewIvar))
             case Some(v) => state.withValue(returnValue)
             case None => EvaluationState(returnValue, state.klasses, state.localVars, newSelf)
           }
@@ -143,24 +154,24 @@ object Evaluator {
     }
 
     t match {
-      case LocalVarAssignment(name, value) => evalLocalVarAssignment(name, value)
-      case IvarAssignment(name, value) => evalIvarAssignment(name, value)
-      case KlassDef(name, ts) => evalKlassDef(name, ts)
-      case MethodDef(name, params, ts) => evalMethodDef(name, params, ts)
-      case Invocation(recvr, msg, args) => evalInvocation(recvr, msg, args)
-      case If(p, yes, no) => evalIf(p, yes, no)
-      case Unless(p, statements) => evalUnless(p, statements)
-      case IvarIdentifier(name) => evalIvarIdentifier(name)
-      case Identifier(name) => evalIdentifier(name)
-      case Constant(name) => evalConstant(name)
-      case String_(s) => e.withValue(RubyString(s))
-      case Symbol_(s) => e.withValue(RubySymbol(s))
+      case LocalVarAssignmentNode(name, value) => evalLocalVarAssignment(name, value)
+      case IvarAssignmentNode(name, value) => evalIvarAssignment(name, value)
+      case KlassDefNode(name, ts) => evalKlassDef(name, ts)
+      case MethodDefNode(name, params, ts) => evalMethodDef(name, params, ts)
+      case InvocationNode(recvr, msg, args) => evalInvocation(recvr, msg, args)
+      case IfNode(p, yes, no) => evalIf(p, yes, no)
+      case UnlessNode(p, statements) => evalUnless(p, statements)
+      case IvarIdentifierNode(name) => evalIvarIdentifier(name)
+      case IdentifierNode(name) => evalIdentifier(name)
+      case ConstantNode(name) => evalConstant(name)
+      case StringNode(s) => e.withValue(RubyString(s))
+      case SymbolNode(s) => e.withValue(RubySymbol(s))
       //case Integer_(n) => evalInteger(n)
       //case Float_(n) => evalFloat(n)
-      case True => e.withValue(RubyTrueClass)
-      case False => e.withValue(RubyFalseClass)
-      case Nil_ => e.withValue(RubyFalseClass)
-      case RubyObjectContainer(obj) => e.withValue(obj)
+      case TrueNode => e.withValue(RubyTrueClass)
+      case FalseNode => e.withValue(RubyFalseClass)
+      case NilNode => e.withValue(RubyFalseClass)
+      case RubyObjectContainerNode(obj) => e.withValue(obj)
       case _ => throw new Exception("unimplemented")
     }
   }
