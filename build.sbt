@@ -83,4 +83,8 @@ scalacOptions ++= Seq(
   "-Xlint:_",
   "-Ypatmat-exhaust-depth", "40")
 
+// Scapegoat configuration
 scapegoatVersion in ThisBuild := "1.3.8"
+
+// Wartremover configuration
+wartremoverErrors ++= Warts.unsafe.diff(Seq(Wart.Recursion, Wart.Throw)) ++ Seq(Wart.ImplicitConversion, Wart.ImplicitParameter)

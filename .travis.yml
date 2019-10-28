@@ -1,7 +1,7 @@
 language: scala
 
 script:
-- sbt compile scapegoat scalastyle
+- sbt compile "scapegoat -P:scapegoat:reports:none" scalastyle
 
 branches:
   only:

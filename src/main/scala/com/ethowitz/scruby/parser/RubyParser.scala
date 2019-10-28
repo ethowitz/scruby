@@ -20,9 +20,9 @@ object RubyParser extends Parsers {
   val keywords = List("def", "end", "true", "false", "class", "if", "elsif", "unless", "else",
     "nil")
 
-  def conditional: Parser[SyntaxTree] = iff | unless
+  def conditional: Parser[SyntaxTree] = iff.|[SyntaxTree](unless)
 
-  def definition: Parser[SyntaxTree] = klassDef | methodDef
+  def definition: Parser[SyntaxTree] = klassDef.|[SyntaxTree](methodDef)
 
   def elsif: Parser[List[SyntaxTree] => IfNode] = {
     (elsifToken ~> expression ~ SeparatorToken ~ sequence(expression)) ^^ {
@@ -32,7 +32,7 @@ object RubyParser extends Parsers {
   }
 
   def ivarAssignment: Parser[SyntaxTree] = {
-    (IvarPrefixToken ~> (identifier | constant) ~ AssignerToken ~ expression) ^^ {
+    (IvarPrefixToken ~> (identifier.|[SyntaxTree](constant)) ~ AssignerToken ~ expression) ^^ {
       case IdentifierNode(name) ~ _ ~ value => IvarAssignmentNode(name, value)
     }
   }
@@ -173,5 +173,5 @@ class TokenReader(tokens: Seq[Token]) extends Reader[Token] {
 
   override def atEnd: Boolean = tokens.isEmpty
   override def pos: Position = NoPosition
-  override def rest: Reader[Token] = new TokenReader(tokens.tail)
+  override def rest: Reader[Token] = new TokenReader(tokens.drop(1))
 }
