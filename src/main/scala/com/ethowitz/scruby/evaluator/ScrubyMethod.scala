@@ -14,7 +14,7 @@ object ScrubyMethod {
     args: Seq[ScrubyObject],
     evals: List[SyntaxTree] => EvaluationState
   ): EvaluationState = {
-    val bindings: Map[Symbol, ScrubyObject] = (method.params zip args) toMap
+    val bindings: Map[Symbol, ScrubyObject] = (method.params zip args).toMap
 
     evals(method.ts.map(SyntaxTree.withBoundVars(_, bindings)))
   }

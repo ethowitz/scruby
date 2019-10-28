@@ -1,7 +1,6 @@
 package com.ethowitz.scruby.core
 
 import com.ethowitz.scruby.evaluator.MethodMap
-import com.ethowitz.scruby.evaluator.ScrubyMethod
 import com.ethowitz.scruby.evaluator.VariableMap
 
 class ScrubySymbol(val s: Symbol, ms: MethodMap)
