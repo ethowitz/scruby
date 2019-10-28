@@ -1,6 +1,6 @@
-package com.ethowitz.scruby.lexer
+package com.ethowitz.sruby.lexer
 
-import com.ethowitz.scruby.exceptions.LexerError
+import com.ethowitz.sruby.exceptions.LexerError
 import scala.util.parsing.combinator._
 
 object Lexer extends RegexParsers {

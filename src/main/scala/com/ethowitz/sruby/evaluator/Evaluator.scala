@@ -1,7 +1,7 @@
-package com.ethowitz.scruby.evaluator
+package com.ethowitz.sruby.evaluator
 
-import com.ethowitz.scruby.parser._
-import com.ethowitz.scruby.core._
+import com.ethowitz.sruby.parser._
+import com.ethowitz.sruby.core._
 
 object Evaluator {
   def apply(ts: List[SyntaxTree]): EvaluationState = evals(ts, EvaluationState.start)
@@ -62,7 +62,7 @@ object Evaluator {
       val EvaluationState(_, klasses, localVars, self) =
         evals(ts, e.withSelf(RubyObject('Class)))
 
-      val errorMessage = "scruby bug: class def evaluation resulted in null self"
+      val errorMessage = "sruby bug: class def evaluation resulted in null self"
       EvaluationState(
         RubySymbol(name),
         klasses + (name -> self.getOrElse(throw new Exception(errorMessage))),
@@ -122,7 +122,7 @@ object Evaluator {
                 state.withSelf(receivingState.value).withLocalVars(VariableMap.empty)))
           }
 
-          val errorMessage = "scruby bug: expression evaluation resulted in null self"
+          val errorMessage = "sruby bug: expression evaluation resulted in null self"
           recvr match {
             case Some(IdentifierNode(name)) =>
               EvaluationState(

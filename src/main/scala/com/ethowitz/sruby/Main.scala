@@ -1,4 +1,4 @@
-package com.ethowitz.scruby
+package com.ethowitz.sruby
 
 import scala.io.Source
 import compiler.Compiler

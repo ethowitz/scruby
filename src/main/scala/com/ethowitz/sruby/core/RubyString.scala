@@ -1,7 +1,7 @@
-package com.ethowitz.scruby.core
+package com.ethowitz.sruby.core
 
-import com.ethowitz.scruby.evaluator.MethodMap
-import com.ethowitz.scruby.evaluator.VariableMap
+import com.ethowitz.sruby.evaluator.MethodMap
+import com.ethowitz.sruby.evaluator.VariableMap
 
 class RubyString(val s: String, ms: MethodMap)
   extends RubyObject('Class, Some('String), ms, VariableMap.empty) {

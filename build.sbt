@@ -12,7 +12,7 @@ scalaVersion := "2.12.8"
 
 // It's possible to define many kinds of settings, such as:
 
-name := "scruby"
+name := "sruby"
 organization := "ch.epfl.scala"
 version := "1.0"
 
