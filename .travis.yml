@@ -1,0 +1,3 @@
+script:
+- sbt compile
+- sbt scalastyle
