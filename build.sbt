@@ -82,3 +82,5 @@ scalacOptions ++= Seq(
   "-Xfatal-warnings",
   "-Xlint:_",
   "-Ypatmat-exhaust-depth", "40")
+
+scapegoatVersion in ThisBuild := "1.3.8"
