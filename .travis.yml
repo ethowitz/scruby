@@ -1,5 +1,4 @@
 language: scala
-scala: 2.13.0
 script:
 - sbt compile
 - sbt scalastyle
