@@ -2,7 +2,6 @@ package com.ethowitz.scruby.evaluator
 
 import com.ethowitz.scruby.parser._
 import com.ethowitz.scruby.core._
-import scala.annotation.tailrec
 
 object Evaluator {
   def apply(ts: List[SyntaxTree]): EvaluationState = evals(ts, EvaluationState.start)
@@ -117,7 +116,6 @@ object Evaluator {
           }
 
           recvr match {
-            case Some(Constant(name)) => state.withValue(returnValue)
             case Some(Identifier(name)) =>
               EvaluationState(
                 returnValue,
@@ -130,6 +128,7 @@ object Evaluator {
                 state.klasses,
                 state.localVars,
                 Some(state.self.get.withIvar(name -> newSelf.get)))
+            case Some(v) => state.withValue(returnValue)
             case None => EvaluationState(returnValue, state.klasses, state.localVars, newSelf)
           }
         case None =>
@@ -162,6 +161,7 @@ object Evaluator {
       case False => e.withValue(ScrubyFalseClass)
       case Nil_ => e.withValue(ScrubyFalseClass)
       case ScrubyObjectContainer(obj) => e.withValue(obj)
+      case _ => throw new Exception("unimplemented")
     }
   }
 }

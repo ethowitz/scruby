@@ -135,6 +135,7 @@ object ScrubyParser extends Parsers {
 
       //case recv ~ Some(_ ~ invWithoutReceiver ~ arg) => invWithoutReceiver(recv)
       case recv ~ None => recv
+      case _ => throw new Exception("unimplemented")
     }
   }
 
@@ -142,6 +143,7 @@ object ScrubyParser extends Parsers {
     ((literal | conditional | identifier) ~ (Period ~ message(identifier) ~ receiver).?) ^^ {
       //case recv ~ Some(_ ~ invWithoutReceiver ~ arg) => invWithoutReceiver(recv)
       case recv ~ None => recv
+      case _ => throw new Exception("unimplemented")
     }
   }
 

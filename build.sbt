@@ -74,3 +74,11 @@ libraryDependencies += "org.scala-lang.modules" %% "scala-parser-combinators" % 
 
 // To learn more about multi-project builds, head over to the official sbt
 // documentation at http://www.scala-sbt.org/documentation.html
+
+scalacOptions ++= Seq(
+  "-unchecked",
+  "-deprecation",
+  "-feature",
+  "-Xfatal-warnings",
+  "-Xlint:_",
+  "-Ypatmat-exhaust-depth", "40")
