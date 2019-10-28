@@ -1,4 +1,9 @@
 language: scala
+
 script:
 - sbt compile
 - sbt scalastyle
+
+branches:
+  only:
+  - master
