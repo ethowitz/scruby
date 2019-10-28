@@ -56,10 +56,12 @@ object Lexer extends RegexParsers {
     "(0|[1-9]+[0-9]*)+\\.[0-9]+".r ^^ { n => FloatToken(n.toFloat) }
   }
 
-  private def parsingGroup = string | symbol | integer | float | assigner | ampersand | constant |
-    ivarPrefix | identifier | scopeResolver | comma | period | openingParenthesis |
-    closingParenthesis | openingCurlyBracket | closingCurlyBracket | openingSquareBracket |
-    closingSquareBracket | not | colon | separator | whitespace
+  // this heinous syntax appeases scalastyle, which failed to lex `string |[Token] symbol`:
+  // `Expected token SEMI but got Token(LBRACKET,[,2416,[)'
+  private def parsingGroup: Parser[Token] = string.|[Token](symbol) | integer | float | assigner |
+    ampersand | constant | ivarPrefix | identifier | scopeResolver | comma | period |
+    openingParenthesis | closingParenthesis | openingCurlyBracket | closingCurlyBracket |
+    openingSquareBracket | closingSquareBracket | not | colon | separator | whitespace
 
 
   private def tokens: Parser[List[Token]] = phrase(rep1(parsingGroup))

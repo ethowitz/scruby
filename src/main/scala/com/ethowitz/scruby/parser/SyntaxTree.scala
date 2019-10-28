@@ -48,8 +48,8 @@ final case class UnlessNode(predicate: SyntaxTree, body: List[SyntaxTree]) exten
 final case class IvarIdentifierNode(name: Symbol) extends SyntaxTree
 final case class IdentifierNode(name: Symbol) extends SyntaxTree
 final case class ConstantNode(name: Symbol) extends SyntaxTree
-final case class ArrayNode(arr: Seq[Any]) extends SyntaxTree
-final case class HashNode(h: Map[Any, Any]) extends SyntaxTree
+final case class ArrayNode(arr: Seq[SyntaxTree]) extends SyntaxTree
+final case class HashNode(h: Map[SyntaxTree, SyntaxTree]) extends SyntaxTree
 final case class StringNode(s: String) extends SyntaxTree
 final case class SymbolNode(s: Symbol) extends SyntaxTree
 final case class IntegerNode(i: Integer) extends SyntaxTree
