@@ -5,7 +5,7 @@ import com.ethowitz.scruby.lexer._
 import scala.util.parsing.combinator._
 import scala.util.parsing.input._
 
-object ScrubyParser extends Parsers {
+object RubyParser extends Parsers {
   override type Elem = Token
 
   def apply(tokens: Seq[Token]): Either[ParserError, List[SyntaxTree]] = {

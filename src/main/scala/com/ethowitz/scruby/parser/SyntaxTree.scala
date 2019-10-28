@@ -1,14 +1,14 @@
 package com.ethowitz.scruby.parser
 
-import com.ethowitz.scruby.core.ScrubyObject
+import com.ethowitz.scruby.core.RubyObject
 
 sealed trait SyntaxTree {
-  def withBoundVars(tree: SyntaxTree, vars: Map[Symbol, ScrubyObject]): SyntaxTree = {
+  def withBoundVars(tree: SyntaxTree, vars: Map[Symbol, RubyObject]): SyntaxTree = {
     def withBoundVars(t: SyntaxTree): SyntaxTree = t match {
       case KlassDef(name, ts) => KlassDef(name, ts map withBoundVars)
       case MethodDef(name, params, ts) => MethodDef(name, params, ts map withBoundVars)
       case Invocation(Some(Identifier(recvr)), msg, ts) => vars get recvr match {
-        case Some(arg) => Invocation(Some(ScrubyObjectContainer(arg)), msg, ts map withBoundVars)
+        case Some(arg) => Invocation(Some(RubyObjectContainer(arg)), msg, ts map withBoundVars)
         case None => Invocation(Some(Identifier(recvr)), msg, ts map withBoundVars)
       }
       case Invocation(Some(recvr), msg, ts) =>
@@ -30,7 +30,7 @@ case class MethodDef(name: Symbol, params: List[Symbol], body: List[SyntaxTree])
   extends SyntaxTree
 case class LocalVarAssignment(name: Symbol, value: SyntaxTree) extends SyntaxTree
 case class IvarAssignment(name: Symbol, value: SyntaxTree) extends SyntaxTree
-case class ScrubyObjectContainer(obj: ScrubyObject) extends SyntaxTree
+case class RubyObjectContainer(obj: RubyObject) extends SyntaxTree
 case class Invocation(receiver: Option[SyntaxTree], message: Symbol, args: List[SyntaxTree])
   extends SyntaxTree
 case class NotSyntaxTree(exp: SyntaxTree) extends SyntaxTree

@@ -4,7 +4,7 @@ import scala.io.Source
 import compiler.Compiler
 import evaluator.Evaluator
 
-object Scruby {
+object Ruby {
   def main(args: Array[String]): Unit = {
     val fileContents = Source.fromFile(args.head).getLines mkString "\n"
 
