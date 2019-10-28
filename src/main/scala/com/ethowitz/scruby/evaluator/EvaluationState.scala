@@ -1,27 +1,27 @@
 package com.ethowitz.scruby.evaluator
 
-import com.ethowitz.scruby.core.ScrubyNilClass
-import com.ethowitz.scruby.core.ScrubyObject
+import com.ethowitz.scruby.core.RubyNilClass
+import com.ethowitz.scruby.core.RubyObject
 
 case class EvaluationState(
-  value: ScrubyObject,
+  value: RubyObject,
   klasses: KlassMap,
   localVars: VariableMap,
-  self: Option[ScrubyObject]
+  self: Option[RubyObject]
 ) {
-  def withSelf(s: ScrubyObject): EvaluationState =
+  def withSelf(s: RubyObject): EvaluationState =
     EvaluationState(value, klasses, localVars, Some(s))
 
-  def withSelf(s: Option[ScrubyObject]): EvaluationState =
+  def withSelf(s: Option[RubyObject]): EvaluationState =
     EvaluationState(value, klasses, localVars, s)
 
-  def withValue(v: ScrubyObject): EvaluationState = EvaluationState(v, klasses, localVars, self)
+  def withValue(v: RubyObject): EvaluationState = EvaluationState(v, klasses, localVars, self)
 
   def withLocalVars(vs: VariableMap): EvaluationState = EvaluationState(value, klasses, vs, self)
 }
 
 object EvaluationState {
   def start: EvaluationState =
-    EvaluationState(ScrubyNilClass, KlassMap.empty, VariableMap.empty, None)
+    EvaluationState(RubyNilClass, KlassMap.empty, VariableMap.empty, None)
 }
 

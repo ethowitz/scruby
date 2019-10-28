@@ -39,7 +39,7 @@ object Evaluator {
         case Some(obj) => e.withValue(obj)
         case None => e.self match {
           case Some(self) => self.methods get name match {
-            case Some(method) => ScrubyMethod.invoke(method, Nil, ts => evals(ts, e))
+            case Some(method) => RubyMethod.invoke(method, Nil, ts => evals(ts, e))
             case None =>
               throw new Exception(s"undefined local variable or method `${name.toString}'")
           }
@@ -52,30 +52,30 @@ object Evaluator {
       e.self match {
         case Some(s) => s.ivars get name match {
           case Some(value) => e.withValue(value)
-          case None => e.withValue(ScrubyNilClass)
+          case None => e.withValue(RubyNilClass)
         }
-        case None => e.withValue(ScrubyNilClass)
+        case None => e.withValue(RubyNilClass)
       }
     }
 
     def evalKlassDef(name: Symbol, ts: List[SyntaxTree]): EvaluationState = {
       val EvaluationState(_, klasses, localVars, self) =
-        evals(ts, e.withSelf(ScrubyObject('Class)))
+        evals(ts, e.withSelf(RubyObject('Class)))
 
-      EvaluationState(ScrubySymbol(name), klasses + (name -> self.get), localVars, e.self)
+      EvaluationState(RubySymbol(name), klasses + (name -> self.get), localVars, e.self)
     }
 
     def evalMethodDef(name: Symbol, params: List[Symbol], ts: List[SyntaxTree]): EvaluationState =
       e.self match {
 
-      case Some(self) => e.withSelf(self.withMethod(name -> ScrubyMethod(params, ts)))
+      case Some(self) => e.withSelf(self.withMethod(name -> RubyMethod(params, ts)))
       case None => throw new Exception("cannot define method in global context")
     }
 
     def evalIf(p: SyntaxTree, yeses: List[SyntaxTree], nos: List[SyntaxTree]): EvaluationState =
       eval(p, e) match {
 
-      case state @ EvaluationState(ScrubyFalseClass | ScrubyNilClass, ks, ls, self) =>
+      case state @ EvaluationState(RubyFalseClass | RubyNilClass, ks, ls, self) =>
         evals(nos, state)
       case state => evals(yeses, state)
     }
@@ -100,14 +100,14 @@ object Evaluator {
           val state = evaldArgs.last
 
           val EvaluationState(returnValue, _, _, newSelf) = if (msg == 'new) {
-            ScrubyConstructor.invoke(
+            RubyConstructor.invoke(
               method,
               evaldArgs.map(_.value),
               ts => evals(
                 ts,
                 state.withSelf(receivingState.value).withLocalVars(VariableMap.empty)))
           } else {
-            ScrubyMethod.invoke(
+            RubyMethod.invoke(
               method,
               evaldArgs.map(_.value),
               ts => evals(
@@ -137,8 +137,8 @@ object Evaluator {
     }
 
     def evalUnless(p: SyntaxTree, ts: List[SyntaxTree]): EvaluationState = eval(p, e) match {
-      case EvaluationState(ScrubyNilClass | ScrubyFalseClass, ks, ls, self) =>
-        EvaluationState(ScrubyNilClass, ks, ls, self)
+      case EvaluationState(RubyNilClass | RubyFalseClass, ks, ls, self) =>
+        EvaluationState(RubyNilClass, ks, ls, self)
       case state => evals(ts, state)
     }
 
@@ -153,14 +153,14 @@ object Evaluator {
       case IvarIdentifier(name) => evalIvarIdentifier(name)
       case Identifier(name) => evalIdentifier(name)
       case Constant(name) => evalConstant(name)
-      case String_(s) => e.withValue(ScrubyString(s))
-      case Symbol_(s) => e.withValue(ScrubySymbol(s))
+      case String_(s) => e.withValue(RubyString(s))
+      case Symbol_(s) => e.withValue(RubySymbol(s))
       //case Integer_(n) => evalInteger(n)
       //case Float_(n) => evalFloat(n)
-      case True => e.withValue(ScrubyTrueClass)
-      case False => e.withValue(ScrubyFalseClass)
-      case Nil_ => e.withValue(ScrubyFalseClass)
-      case ScrubyObjectContainer(obj) => e.withValue(obj)
+      case True => e.withValue(RubyTrueClass)
+      case False => e.withValue(RubyFalseClass)
+      case Nil_ => e.withValue(RubyFalseClass)
+      case RubyObjectContainer(obj) => e.withValue(obj)
       case _ => throw new Exception("unimplemented")
     }
   }
