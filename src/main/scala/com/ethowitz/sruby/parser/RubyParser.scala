@@ -1,7 +1,7 @@
-package com.ethowitz.scruby.parser
+package com.ethowitz.sruby.parser
 
-import com.ethowitz.scruby.exceptions.ParserError
-import com.ethowitz.scruby.lexer._
+import com.ethowitz.sruby.exceptions.ParserError
+import com.ethowitz.sruby.lexer._
 import scala.util.parsing.combinator._
 import scala.util.parsing.input._
 

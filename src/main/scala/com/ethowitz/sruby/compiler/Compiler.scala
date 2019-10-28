@@ -1,8 +1,8 @@
-package com.ethowitz.scruby.compiler
+package com.ethowitz.sruby.compiler
 
-import com.ethowitz.scruby.exceptions.CompilationError
-import com.ethowitz.scruby.lexer.Lexer
-import com.ethowitz.scruby.parser.{ RubyParser, SyntaxTree }
+import com.ethowitz.sruby.exceptions.CompilationError
+import com.ethowitz.sruby.lexer.Lexer
+import com.ethowitz.sruby.parser.{ RubyParser, SyntaxTree }
 
 object Compiler {
   // Surpressing inferred Product type warnings for now due to what I think may be a bug:

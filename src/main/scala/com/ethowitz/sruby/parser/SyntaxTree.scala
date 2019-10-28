@@ -1,6 +1,6 @@
-package com.ethowitz.scruby.parser
+package com.ethowitz.sruby.parser
 
-import com.ethowitz.scruby.core.RubyObject
+import com.ethowitz.sruby.core.RubyObject
 
 sealed trait SyntaxTree {
   def withBoundVars(tree: SyntaxTree, vars: Map[Symbol, RubyObject]): SyntaxTree = {

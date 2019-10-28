@@ -1,4 +1,4 @@
-package com.ethowitz.scruby.evaluator
+package com.ethowitz.sruby.evaluator
 
 class MethodMap private(m: Map[Symbol, RubyMethod]) {
   private val internalMap = m

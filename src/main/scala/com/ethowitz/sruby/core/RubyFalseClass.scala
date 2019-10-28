@@ -1,7 +1,7 @@
-package com.ethowitz.scruby.core
+package com.ethowitz.sruby.core
 
-import com.ethowitz.scruby.evaluator.MethodMap
-import com.ethowitz.scruby.evaluator.VariableMap
+import com.ethowitz.sruby.evaluator.MethodMap
+import com.ethowitz.sruby.evaluator.VariableMap
 
 object RubyFalseClass
   extends RubyObject('FalseClass, None, MethodMap.empty, VariableMap.empty) {

@@ -1,7 +1,7 @@
-package com.ethowitz.scruby.evaluator
+package com.ethowitz.sruby.evaluator
 
-import com.ethowitz.scruby.parser.SyntaxTree
-import com.ethowitz.scruby.core.RubyObject
+import com.ethowitz.sruby.parser.SyntaxTree
+import com.ethowitz.sruby.core.RubyObject
 
 class RubyConstructor(params: Seq[Symbol], ts: List[SyntaxTree]) extends RubyMethod(params, ts)
 

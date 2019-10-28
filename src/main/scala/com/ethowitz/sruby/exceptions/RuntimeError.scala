@@ -1,4 +1,4 @@
-package com.ethowitz.scruby.exceptions
+package com.ethowitz.sruby.exceptions
 
 object RuntimeError {
   def apply(err: String, stack: List[String]): String = err + "\n" + stackMessage(stack)

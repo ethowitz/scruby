@@ -1,9 +1,9 @@
-package com.ethowitz.scruby.core
+package com.ethowitz.sruby.core
 
-import com.ethowitz.scruby.evaluator.MethodMap
-import com.ethowitz.scruby.evaluator.RubyMethod
-import com.ethowitz.scruby.evaluator.VariableMap
-import com.ethowitz.scruby.parser.RubyObjectContainerNode
+import com.ethowitz.sruby.evaluator.MethodMap
+import com.ethowitz.sruby.evaluator.RubyMethod
+import com.ethowitz.sruby.evaluator.VariableMap
+import com.ethowitz.sruby.parser.RubyObjectContainerNode
 
 class RubyObject(
   val klass: Symbol,

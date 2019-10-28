@@ -1,7 +1,7 @@
-package com.ethowitz.scruby.core
+package com.ethowitz.sruby.core
 
-import com.ethowitz.scruby.evaluator.MethodMap
-import com.ethowitz.scruby.evaluator.VariableMap
+import com.ethowitz.sruby.evaluator.MethodMap
+import com.ethowitz.sruby.evaluator.VariableMap
 
 class RubySymbol(val s: Symbol, ms: MethodMap)
   extends RubyObject('Class, Some('Symbol), ms, VariableMap.empty) {

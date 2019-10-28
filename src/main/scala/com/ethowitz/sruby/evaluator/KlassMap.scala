@@ -1,6 +1,6 @@
-package com.ethowitz.scruby.evaluator
+package com.ethowitz.sruby.evaluator
 
-import com.ethowitz.scruby.core.RubyObject
+import com.ethowitz.sruby.core.RubyObject
 
 class KlassMap private(m: Map[Symbol, RubyObject]) {
   private val internalMap = m
@@ -9,7 +9,7 @@ class KlassMap private(m: Map[Symbol, RubyObject]) {
   def +(t: (Symbol, RubyObject)): KlassMap = new KlassMap(internalMap + t)
   // scalastyle:on method.name
 
-  // def get: symbol => option[scrubymethod] = internalmap.get
+  // def get: symbol => option[srubymethod] = internalmap.get
   def get(key: Symbol): Option[RubyObject] = internalMap get key
 }
 

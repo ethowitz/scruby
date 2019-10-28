@@ -1,7 +1,7 @@
-package com.ethowitz.scruby.evaluator
+package com.ethowitz.sruby.evaluator
 
-import com.ethowitz.scruby.core.RubyNilClass
-import com.ethowitz.scruby.core.RubyObject
+import com.ethowitz.sruby.core.RubyNilClass
+import com.ethowitz.sruby.core.RubyObject
 
 final case class EvaluationState(
   value: RubyObject,
