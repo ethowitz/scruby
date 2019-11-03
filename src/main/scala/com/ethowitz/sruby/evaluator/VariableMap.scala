@@ -9,7 +9,6 @@ class VariableMap private(m: Map[Symbol, RubyObject]) {
   def +(t: (Symbol, RubyObject)): VariableMap = new VariableMap(internalMap + t)
   // scalastyle:on method.name
 
-  // def get: symbol => option[srubymethod] = internalmap.get
   def get(key: Symbol): Option[RubyObject] = internalMap get key
 }
 
