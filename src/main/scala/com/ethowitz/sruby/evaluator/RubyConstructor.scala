@@ -10,11 +10,7 @@ class RubyConstructor(params: Seq[Symbol], ts: List[SyntaxTree]) extends RubyMet
   ): EvaluationState = {
     val EvaluationState(v, ks, ls, s) = super.invoke(args, evals)
 
-    EvaluationState(
-      s.getOrElse(throw new Exception("method invocation resulted in null self")),
-      ks,
-      ls,
-      s)
+    EvaluationState(s, ks, ls, s)
   }
 }
 
