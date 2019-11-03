@@ -107,35 +107,52 @@ object RubyParser extends Parsers {
     ifPattern.|[SyntaxTree](unlessPattern)
   }
 
+  // scalastyle:off method.length
   private def invocationPattern: Parser[InvocationNode] = {
-    def leftmostReceiverPattern: Parser[SyntaxTree] = literalPattern | conditionalPattern |
-      nonKeywordIdentifierPattern | ivarIdentifierPattern | constantPattern
-    def baseInvocationPattern: Parser[(Option[SyntaxTree] => InvocationNode) ~ SyntaxTree] =
-      PeriodToken ~> messagePattern(identifierPattern) ~ innerInvocationPattern
-
-    def innerInvocationPattern: Parser[SyntaxTree] = {
-      def innerReceiverPattern: Parser[SyntaxTree] = literalPattern | conditionalPattern |
-        identifierPattern
-
-      (innerReceiverPattern ~ baseInvocationPattern.?) ^^ {
-        //case recv ~ Some(_ ~ invWithoutReceiver ~ arg) => invWithoutReceiver(recv)
-        case recv ~ None => recv
-        case _ => throw new Exception("unimplemented")
+    def leftmostInvocationPattern: Parser[InvocationNode] = {
+      def innerInvocationPattern: Parser[Option[SyntaxTree] => InvocationNode] = {
+        (PeriodToken ~> messagePattern(identifierPattern) ~ innerInvocationPattern.?) ^^ {
+          case partialInvocation ~ None => partialInvocation
+          case partialInvocation ~ Some(innerPartialInvocation) => (receiver: Option[SyntaxTree]) =>
+            innerPartialInvocation(Some(partialInvocation(receiver)))
+        }
       }
-    }
 
-    def leftmostInvocationPattern: Parser[SyntaxTree] = {
-      (leftmostReceiverPattern ~ baseInvocationPattern.?) ^^ {
-        //case recv ~ Some(_ ~ invWithoutReceiver ~ arg) => invWithoutReceiver(recv)
-        case recv ~ None => recv
-        case _ => throw new Exception("unimplemented")
+      def messageInvocationPattern: Parser[InvocationNode] = {
+        (messagePattern(nonKeywordIdentifierPattern) ~ innerInvocationPattern.?) ^^ {
+          case partialInvocation ~ None => partialInvocation(None)
+          case leftmostPartialInvocation ~ Some(partialInvocation) =>
+            partialInvocation(Some(leftmostPartialInvocation(None)))
+        }
       }
+
+      def nonMessageInvocationPattern: Parser[InvocationNode] = {
+        def nonMessageReceiverPattern: Parser[SyntaxTree] = literalPattern | conditionalPattern |
+          ivarIdentifierPattern | constantPattern
+
+        (nonMessageReceiverPattern ~ innerInvocationPattern) ^^ {
+          case receiver ~ partialInvocation => partialInvocation(Some(receiver))
+        }
+      }
+
+      messageInvocationPattern | nonMessageInvocationPattern
     }
 
     def messagePattern(id: Parser[IdentifierNode]): Parser[Option[SyntaxTree] => InvocationNode] = {
+      def messageNoArgsPattern: Parser[Option[SyntaxTree] => InvocationNode] = id ^^ {
+        case IdentifierNode(name) => (receiver: Option[SyntaxTree]) => receiver match {
+          case Some(r) => InvocationWithReceiverNode(r, name, Nil)
+          case None => InvocationWithImplicitReceiverNode(name, Nil)
+        }
+      }
+
       def messageNoParensPattern: Parser[Option[SyntaxTree] => InvocationNode] = {
-        (id ~ repsep(expressionPattern, CommaToken)) ^^ {
-          case IdentifierNode(name) ~ args => ts => InvocationNode(ts, name, args)
+        (id ~ rep1sep(expressionPattern, CommaToken) ~> failure("no") |
+            id ~ rep1sep(expressionPattern, CommaToken)) ^^ {
+          case IdentifierNode(name) ~ args => (receiver: Option[SyntaxTree]) => receiver match {
+            case Some(r) => InvocationWithReceiverNode(r, name, args)
+            case None => InvocationWithImplicitReceiverNode(name, args)
+          }
         }
       }
 
@@ -143,17 +160,19 @@ object RubyParser extends Parsers {
         (id ~ OpeningParenthesisToken ~ repsep(expressionPattern, CommaToken)
             ~ ClosingParenthesisToken) ^^ {
           case IdentifierNode(name) ~ _ ~ args ~ _ =>
-            (self: Option[SyntaxTree]) => InvocationNode(self, name, args)
+            (receiver: Option[SyntaxTree]) => receiver match {
+              case Some(r) => InvocationWithReceiverNode(r, name, args)
+              case None => InvocationWithImplicitReceiverNode(name, args)
+            }
         }
       }
 
-      messageParensPattern | messageNoParensPattern
+      messageParensPattern | messageNoParensPattern | messageNoArgsPattern
     }
 
-    (leftmostInvocationPattern ~ PeriodToken ~ messagePattern(identifierPattern)) ^^ {
-      case recv ~ _ ~ inv => inv(Some(recv))
-    }
+    leftmostInvocationPattern
   }
+  // scalastyle:on method.length
 
   private def ivarAssignmentPattern: Parser[SyntaxTree] = {
     (IvarPrefixToken ~> (identifierPattern.|[SyntaxTree](constantPattern)) ~ AssignerToken ~

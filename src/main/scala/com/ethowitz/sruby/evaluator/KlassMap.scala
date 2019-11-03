@@ -9,7 +9,6 @@ class KlassMap private(m: Map[Symbol, RubyObject]) {
   def +(t: (Symbol, RubyObject)): KlassMap = new KlassMap(internalMap + t)
   // scalastyle:on method.name
 
-  // def get: symbol => option[srubymethod] = internalmap.get
   def get(key: Symbol): Option[RubyObject] = internalMap get key
 }
 

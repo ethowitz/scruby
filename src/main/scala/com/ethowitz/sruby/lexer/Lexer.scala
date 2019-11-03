@@ -37,7 +37,7 @@ object Lexer extends RegexParsers {
   }
 
   def identifier: Parser[IdentifierToken] = {
-    "[a-z_=<>%&\\*\\|][a-zA-Z0-9_]*[?!]?".r ^^ { s => IdentifierToken(s) }
+    "[a-z_=<>%&\\*\\|][a-zA-Z0-9_]*[?!=]?".r ^^ { s => IdentifierToken(s) }
   }
 
   def string: Parser[StringToken] = {

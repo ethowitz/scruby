@@ -2,29 +2,54 @@ package com.ethowitz.sruby.parser
 
 import com.ethowitz.sruby.core.RubyObject
 
-sealed trait SyntaxTree {
-  def withBoundVars(tree: SyntaxTree, vars: Map[Symbol, RubyObject]): SyntaxTree = {
+// scalastyle:off cyclomatic.complexity
+sealed class SyntaxTree {
+  def withBoundVars(vars: Map[Symbol, RubyObject]): SyntaxTree = {
     def withBoundVars(t: SyntaxTree): SyntaxTree = t match {
       case KlassDefNode(name, ts) => KlassDefNode(name, ts map withBoundVars)
       case MethodDefNode(name, params, ts) => MethodDefNode(name, params, ts map withBoundVars)
-      case InvocationNode(Some(IdentifierNode(recvr)), msg, ts) => vars get recvr match {
+
+      case InvocationWithReceiverNode(IdentifierNode(recvr), msg, ts) => vars get recvr match {
         case Some(arg) =>
-          InvocationNode(Some(RubyObjectContainerNode(arg)), msg, ts map withBoundVars)
-        case None => InvocationNode(Some(IdentifierNode(recvr)), msg, ts map withBoundVars)
+          InvocationWithReceiverNode(RubyObjectContainerNode(arg), msg, ts map withBoundVars)
+        case None => InvocationWithReceiverNode(IdentifierNode(recvr), msg, ts map withBoundVars)
       }
-      case InvocationNode(Some(recvr), msg, ts) =>
-        InvocationNode(Some(withBoundVars(recvr)), msg, ts map withBoundVars)
+
+      case InvocationWithReceiverNode(recvr, msg, ts) =>
+        InvocationWithReceiverNode(withBoundVars(recvr), msg, ts map withBoundVars)
+
+      case invocation @ InvocationWithImplicitReceiverNode(msg, Nil) => vars get msg match {
+        case Some(arg) => RubyObjectContainerNode(arg)
+        case None => invocation
+      }
+
+      case InvocationWithImplicitReceiverNode(msg, ts) =>
+        InvocationWithImplicitReceiverNode(msg, ts map withBoundVars)
+
       case IfNode(p, yes, no) =>
         IfNode(withBoundVars(p), yes map withBoundVars, no map withBoundVars)
+
       case UnlessNode(p, ts) => UnlessNode(withBoundVars(p), ts map withBoundVars)
-      case t => t
+
+      case node @ IvarAssignmentNode(name, InvocationWithImplicitReceiverNode(value, Nil)) =>
+        vars get value match {
+          case Some(arg) => IvarAssignmentNode(name, RubyObjectContainerNode(arg))
+          case None => node
+        }
+
+      case node @ LocalVarAssignmentNode(name, InvocationWithImplicitReceiverNode(value, Nil)) =>
+        vars get value match {
+          case Some(arg) => LocalVarAssignmentNode(name, RubyObjectContainerNode(arg))
+          case None => node
+        }
+
+      // Removing the default case results in extremely long compilation times
+      case default => default
     }
 
-    withBoundVars(tree)
+    withBoundVars(this)
   }
 }
-
-case object SyntaxTree extends SyntaxTree
 
 final case class KlassDefNode(name: Symbol, statements: List[SyntaxTree]) extends SyntaxTree
 final case class MethodDefNode(name: Symbol, params: List[Symbol], body: List[SyntaxTree])
@@ -33,10 +58,16 @@ final case class MethodDefNode(name: Symbol, params: List[Symbol], body: List[Sy
 final case class LocalVarAssignmentNode(name: Symbol, value: SyntaxTree) extends SyntaxTree
 final case class IvarAssignmentNode(name: Symbol, value: SyntaxTree) extends SyntaxTree
 final case class RubyObjectContainerNode(obj: RubyObject) extends SyntaxTree
-final case class InvocationNode(
-  receiver: Option[SyntaxTree],
+
+sealed trait InvocationNode extends SyntaxTree
+
+final case class InvocationWithReceiverNode(
+  receiver: SyntaxTree,
   message: Symbol,
-  args: List[SyntaxTree]) extends SyntaxTree
+  args: List[SyntaxTree]) extends InvocationNode
+
+final case class InvocationWithImplicitReceiverNode(message: Symbol, args: List[SyntaxTree])
+  extends InvocationNode
 
 final case class NotSyntaxTreeNode(exp: SyntaxTree) extends SyntaxTree
 final case class IfNode(
