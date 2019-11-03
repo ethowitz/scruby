@@ -4,23 +4,22 @@ import com.ethowitz.sruby.parser._
 import com.ethowitz.sruby.core._
 
 object Evaluator {
+  // Public methods
   def apply(ts: List[SyntaxTree]): EvaluationState = evals(ts, EvaluationState.start)
 
-  def evals(ts: List[SyntaxTree], e: EvaluationState): EvaluationState = ts match {
+  // Private methods
+  private def evals(ts: List[SyntaxTree], e: EvaluationState): EvaluationState = ts match {
     case Nil => e
     case t :: ts => evals(ts, eval(t, e))
   }
 
   // scalastyle:off cyclomatic.complexity
   // scalastyle:off method.length
-  def eval(t: SyntaxTree, e: EvaluationState): EvaluationState = {
+  private def eval(t: SyntaxTree, e: EvaluationState): EvaluationState = {
     def evalIvarAssignment(name: Symbol, value: SyntaxTree): EvaluationState = {
       val EvaluationState(v, ks, ls, self) = eval(value, e)
 
-      self match {
-        case Some(s) => EvaluationState(v, ks, ls, Some(s.withIvar(name -> v)))
-        case None => throw new Exception("cannot define ivar in global context")
-      }
+      EvaluationState(v, ks, ls, self.withIvar(name -> v))
     }
 
     def evalLocalVarAssignment(name: Symbol, value: SyntaxTree): EvaluationState = {
@@ -34,62 +33,44 @@ object Evaluator {
       case None => throw new Exception(s"unitialized constant ${name.toString}")
     }
 
-    def evalIvarIdentifier(name: Symbol): EvaluationState = {
-      e.self match {
-        case Some(s) => s.ivars get name match {
-          case Some(value) => e.withValue(value)
-          case None => e.withValue(RubyNilClass)
-        }
-        case None => e.withValue(RubyNilClass)
-      }
+    def evalIvarIdentifier(name: Symbol): EvaluationState = e.self.ivars get name match {
+      case Some(value) => e.withValue(value)
+      case None => e.withValue(RubyNilClass)
     }
 
     def evalKlassDef(name: Symbol, ts: List[SyntaxTree]): EvaluationState = {
-      val EvaluationState(_, klasses, localVars, self) =
-        evals(ts, e.withSelf(RubyObject('Class)))
+      val EvaluationState(_, klasses, localVars, self) = evals(ts, e.withSelf(RubyObject('Class)))
 
-      val errorMessage = "sruby bug: class def evaluation resulted in null self"
-      EvaluationState(
-        RubySymbol(name),
-        klasses + (name -> self.getOrElse(throw new Exception(errorMessage))),
-        localVars,
-        e.self)
+      EvaluationState(RubySymbol(name), klasses + (name -> self), localVars, e.self)
     }
 
     def evalMethodDef(name: Symbol, params: List[Symbol], ts: List[SyntaxTree]): EvaluationState =
-      e.self match {
-        case Some(self) => e.withSelf(self.withMethod(name -> RubyMethod(params, ts)))
-        case None => throw new Exception("cannot define method in global context")
-      }
+      e.withSelf(e.self.withMethod(name -> RubyMethod(params, ts))).withValue(RubySymbol(name))
 
     def evalIf(p: SyntaxTree, yeses: List[SyntaxTree], nos: List[SyntaxTree]): EvaluationState =
       eval(p, e) match {
 
-      case state @ EvaluationState(RubyFalseClass | RubyNilClass, ks, ls, self) =>
-        evals(nos, state)
+      case state @ EvaluationState(RubyFalseClass | RubyNilClass, ks, ls, self) => evals(nos, state)
       case state => evals(yeses, state)
     }
 
     def evalInvocationWithImplicitReceiver(msg: Symbol, args: List[SyntaxTree]): EvaluationState = {
       e.localVars get msg match {
         case Some(obj) => e.withValue(obj)
-        case None => e.self match {
-          case Some(self) => self.methods get msg match {
-            case Some(method) =>
-              val evaldArgs = args.scanLeft(e) { (acc, t) => eval(t, acc) }
-              val state = evaldArgs.lastOption match {
-                case Some(s) => s
-                case None => throw new Exception("Sequence#scanLeft returned an empty sequence")
-              }
-              val EvaluationState(newValue, _, _, newSelf) =
-                method.invoke(
-                  evaldArgs.map(_.value).drop(1).toSeq,
-                  ts => evals(ts, state.withLocalVars(VariableMap.empty)))
+        case None => e.self.methods get msg match {
+          case Some(method) =>
+            val evaldArgs = args.scanLeft(e) { (acc, t) => eval(t, acc) }
 
-              state.withValue(newValue).withSelf(newSelf)
-            case None =>
-              throw new Exception(s"undefined local variable or method `${msg.toString}'")
-          }
+            evaldArgs.lastOption match {
+              case Some(state) =>
+                val EvaluationState(newValue, _, _, newSelf) =
+                  method.invoke(
+                    evaldArgs.map(_.value).drop(1).toSeq,
+                    ts => evals(ts, state.withLocalVars(VariableMap.empty)))
+
+                state.withValue(newValue).withSelf(newSelf)
+              case None => throw new Exception("Sequence#scanLeft returned an empty sequence")
+            }
           case None => throw new Exception(s"undefined local variable or method `${msg.toString}'")
         }
       }
@@ -105,35 +86,27 @@ object Evaluator {
       receivingState.value.methods get msg match {
         case Some(method) =>
           val evaldArgs = args.scanLeft(receivingState) { (acc, t) => eval(t, acc) }
-          val state = evaldArgs.lastOption match {
-            case Some(s) => s
+
+          evaldArgs.lastOption match {
+            case Some(state) =>
+              val EvaluationState(returnValue, _, _, newSelf) = method.invoke(
+                evaldArgs.map(_.value).drop(1).toSeq,
+                ts => evals(
+                  ts,
+                  state.withSelf(receivingState.value).withLocalVars(VariableMap.empty)))
+
+              recvr match {
+                case InvocationWithImplicitReceiverNode(name, _) =>
+                  val newLocalVars = state.localVars + (name -> newSelf)
+
+                  EvaluationState(returnValue, state.klasses, newLocalVars, state.self)
+                case IvarIdentifierNode(name) =>
+                  val selfWithNewIvar = state.self.withIvar(name -> newSelf)
+
+                  EvaluationState(returnValue, state.klasses, state.localVars, selfWithNewIvar)
+                case v => state.withValue(returnValue)
+              }
             case None => throw new Exception("Sequence#scanLeft returned an empty sequence")
-          }
-
-          val EvaluationState(returnValue, _, _, newSelf) = method.invoke(
-            evaldArgs.map(_.value).drop(1).toSeq,
-            ts => evals(
-              ts,
-              state.withSelf(receivingState.value).withLocalVars(VariableMap.empty)))
-
-          val errorMessage = "sruby bug: expression evaluation resulted in null self"
-          recvr match {
-            case InvocationWithImplicitReceiverNode(name, _) =>
-              EvaluationState(
-                returnValue,
-                state.klasses,
-                state.localVars + (name -> newSelf.getOrElse(throw new Exception(errorMessage))),
-                state.self)
-            case IvarIdentifierNode(name) =>
-              val selfWithNewIvar = state.self.getOrElse(throw new Exception(errorMessage)).
-                withIvar(name -> newSelf.getOrElse(throw new Exception(errorMessage)))
-
-              EvaluationState(
-                returnValue,
-                state.klasses,
-                state.localVars,
-                Some(selfWithNewIvar))
-            case v => state.withValue(returnValue)
           }
         case None =>
           throw new Exception(s"undefined method `${msg.toString}' for ${receivingState.value}")

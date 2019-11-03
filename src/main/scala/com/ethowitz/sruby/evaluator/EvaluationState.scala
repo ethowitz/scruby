@@ -7,21 +7,17 @@ final case class EvaluationState(
   value: RubyObject,
   klasses: KlassMap,
   localVars: VariableMap,
-  self: Option[RubyObject]
+  self: RubyObject
 ) {
-  def withSelf(s: RubyObject): EvaluationState =
-    EvaluationState(value, klasses, localVars, Some(s))
-
-  def withSelf(s: Option[RubyObject]): EvaluationState =
-    EvaluationState(value, klasses, localVars, s)
+  def withSelf(s: RubyObject): EvaluationState = EvaluationState(value, klasses, localVars, s)
 
   def withValue(v: RubyObject): EvaluationState = EvaluationState(v, klasses, localVars, self)
 
-  def withLocalVars(vs: VariableMap): EvaluationState = EvaluationState(value, klasses, vs, self)
+  def withLocalVars(ls: VariableMap): EvaluationState = EvaluationState(value, klasses, ls, self)
 }
 
 object EvaluationState {
   def start: EvaluationState =
-    EvaluationState(RubyNilClass, KlassMap.empty, VariableMap.empty, None)
+    EvaluationState(RubyNilClass, KlassMap.empty, VariableMap.empty, RubyMain)
 }
 
