@@ -85,8 +85,5 @@ scalacOptions ++= Seq(
 
 addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1")
 
-// Scapegoat configuration
-scapegoatVersion in ThisBuild := "1.3.8"
-
 // Wartremover configuration
 wartremoverErrors ++= Warts.unsafe.diff(Seq(Wart.Recursion, Wart.Throw)) ++ Seq(Wart.ImplicitConversion, Wart.ImplicitParameter)

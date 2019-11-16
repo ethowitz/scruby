@@ -7,7 +7,7 @@ import com.ethowitz.sruby.core.RubyObject
 class RubyMethod(val params: Seq[Symbol], val ts: List[AST]) {
   def invoke(
     args: State[EvalState, Seq[RubyObject]],
-    evals: List[AST] => Evaluator.EvalTransition
+    evals: List[AST] => State[EvalState, RubyObject]
   ): State[EvalState, RubyObject] = args.flatMap { evaldArgs =>
     evaldArgs.length == params.length match {
       case true =>

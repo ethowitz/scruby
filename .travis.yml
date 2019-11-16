@@ -1,7 +1,7 @@
 language: scala
 
 script:
-- sbt compile scapegoat scalastyle
+- sbt compile scalastyle
 
 branches:
   only:

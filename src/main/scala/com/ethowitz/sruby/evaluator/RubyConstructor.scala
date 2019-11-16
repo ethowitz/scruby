@@ -8,7 +8,10 @@ class RubyConstructor(params: Seq[Symbol], ts: List[AST]) extends RubyMethod(par
   override def invoke(
     args: State[EvalState, Seq[RubyObject]],
     evals: List[AST] => State[EvalState, RubyObject]
-  ): State[EvalState, RubyObject] = super.invoke(args, evals)
+  ): State[EvalState, RubyObject] = for {
+    _ <- super.invoke(args, evals)
+    EvalState(_, _, self) <- State.get
+  } yield self
 }
 
 object RubyConstructor {
