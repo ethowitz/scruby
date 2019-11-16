@@ -23,4 +23,3 @@ final case class EvalState(klasses: KlassMap, localVars: VariableMap, self: Ruby
 object EvalState {
   def start: EvalState = EvalState(KlassMap.empty, VariableMap.empty, RubyMain)
 }
-
