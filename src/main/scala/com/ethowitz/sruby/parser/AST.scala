@@ -3,9 +3,9 @@ package com.ethowitz.sruby.parser
 import com.ethowitz.sruby.core.RubyObject
 
 // scalastyle:off cyclomatic.complexity
-sealed class SyntaxTree {
-  def withBoundVars(vars: Map[Symbol, RubyObject]): SyntaxTree = {
-    def withBoundVars(t: SyntaxTree): SyntaxTree = t match {
+sealed class AST {
+  def withBoundVars(vars: Map[Symbol, RubyObject]): AST = {
+    def withBoundVars(t: AST): AST = t match {
       case KlassDefNode(name, ts) => KlassDefNode(name, ts map withBoundVars)
       case MethodDefNode(name, params, ts) => MethodDefNode(name, params, ts map withBoundVars)
 
@@ -51,40 +51,32 @@ sealed class SyntaxTree {
   }
 }
 
-final case class KlassDefNode(name: Symbol, statements: List[SyntaxTree]) extends SyntaxTree
-final case class MethodDefNode(name: Symbol, params: List[Symbol], body: List[SyntaxTree])
-  extends SyntaxTree
+final case class KlassDefNode(name: Symbol, statements: List[AST]) extends AST
+final case class MethodDefNode(name: Symbol, params: List[Symbol], body: List[AST]) extends AST
+final case class LocalVarAssignmentNode(name: Symbol, value: AST) extends AST
+final case class IvarAssignmentNode(name: Symbol, value: AST) extends AST
+final case class RubyObjectContainerNode(obj: RubyObject) extends AST
 
-final case class LocalVarAssignmentNode(name: Symbol, value: SyntaxTree) extends SyntaxTree
-final case class IvarAssignmentNode(name: Symbol, value: SyntaxTree) extends SyntaxTree
-final case class RubyObjectContainerNode(obj: RubyObject) extends SyntaxTree
+sealed trait InvocationNode extends AST
 
-sealed trait InvocationNode extends SyntaxTree
-
-final case class InvocationWithReceiverNode(
-  receiver: SyntaxTree,
-  message: Symbol,
-  args: List[SyntaxTree]) extends InvocationNode
-
-final case class InvocationWithImplicitReceiverNode(message: Symbol, args: List[SyntaxTree])
+final case class InvocationWithReceiverNode(receiver: AST, message: Symbol, args: List[AST])
   extends InvocationNode
 
-final case class NotSyntaxTreeNode(exp: SyntaxTree) extends SyntaxTree
-final case class IfNode(
-  predicate: SyntaxTree,
-  yesBranch: List[SyntaxTree],
-  noBranch: List[SyntaxTree]) extends SyntaxTree
+final case class InvocationWithImplicitReceiverNode(message: Symbol, args: List[AST])
+  extends InvocationNode
 
-final case class UnlessNode(predicate: SyntaxTree, body: List[SyntaxTree]) extends SyntaxTree
-final case class IvarIdentifierNode(name: Symbol) extends SyntaxTree
-final case class IdentifierNode(name: Symbol) extends SyntaxTree
-final case class ConstantNode(name: Symbol) extends SyntaxTree
-final case class ArrayNode(arr: Seq[SyntaxTree]) extends SyntaxTree
-final case class HashNode(h: Map[SyntaxTree, SyntaxTree]) extends SyntaxTree
-final case class StringNode(s: String) extends SyntaxTree
-final case class SymbolNode(s: Symbol) extends SyntaxTree
-final case class IntegerNode(i: Integer) extends SyntaxTree
-final case class FloatNode(f: Float) extends SyntaxTree
-case object TrueNode extends SyntaxTree
-case object FalseNode extends SyntaxTree
-case object NilNode extends SyntaxTree
+final case class NotASTNode(exp: AST) extends AST
+final case class IfNode(predicate: AST, yesBranch: List[AST], noBranch: List[AST]) extends AST
+final case class UnlessNode(predicate: AST, body: List[AST]) extends AST
+final case class IvarIdentifierNode(name: Symbol) extends AST
+final case class IdentifierNode(name: Symbol) extends AST
+final case class ConstantNode(name: Symbol) extends AST
+final case class ArrayNode(arr: Seq[AST]) extends AST
+final case class HashNode(h: Map[AST, AST]) extends AST
+final case class StringNode(s: String) extends AST
+final case class SymbolNode(s: Symbol) extends AST
+final case class IntegerNode(i: Integer) extends AST
+final case class FloatNode(f: Float) extends AST
+case object TrueNode extends AST
+case object FalseNode extends AST
+case object NilNode extends AST

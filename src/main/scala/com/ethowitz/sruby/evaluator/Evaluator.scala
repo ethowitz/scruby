@@ -1,123 +1,107 @@
 package com.ethowitz.sruby.evaluator
 
-import com.ethowitz.sruby.parser._
+import cats.data.State
 import com.ethowitz.sruby.core._
+import com.ethowitz.sruby.parser._
 
 object Evaluator {
+  // Types
+  type EvalTransition = State[EvalState, RubyObject]
+
   // Public methods
-  def apply(ts: List[SyntaxTree]): EvaluationState = evals(ts, EvaluationState.start)
+  def apply(ts: List[AST]): RubyObject = evals(ts).run(EvalState.start).value._2
 
   // Private methods
-  private def evals(ts: List[SyntaxTree], e: EvaluationState): EvaluationState = ts match {
-    case Nil => e
-    case t :: ts => evals(ts, eval(t, e))
+  private def evals(ts: List[AST]): EvalTransition = {
+    val initialState = State.pure[EvalState, RubyObject](RubyNilClass)
+
+    ts.foldLeft(initialState) { (acc, t) => acc.flatMap { _ => eval(t) } }
   }
 
   // scalastyle:off cyclomatic.complexity
   // scalastyle:off method.length
-  private def eval(t: SyntaxTree, e: EvaluationState): EvaluationState = {
-    def evalIvarAssignment(name: Symbol, value: SyntaxTree): EvaluationState = {
-      val EvaluationState(v, ks, ls, self) = eval(value, e)
+  private def eval(t: AST): EvalTransition = {
+    def evalIvarAssignment(name: Symbol, value: AST): EvalTransition = for {
+      result <- eval(value)
+      _ <- State.modify[EvalState](_.addIvarOnSelf(name -> result))
+    } yield result
 
-      EvaluationState(v, ks, ls, self.withIvar(name -> v))
+    def evalLocalVarAssignment(name: Symbol, value: AST): EvalTransition = for {
+      result <- eval(value)
+      _ <- State.modify[EvalState](_.addLocalVar(name -> result))
+    } yield result
+
+    def evalConstant(name: Symbol): EvalTransition = State[EvalState, RubyObject] { state =>
+      val value = state.klasses.get(name).
+        getOrElse(throw new Exception(s"unitialized constant ${name.toString}"))
+
+      (state, value)
     }
 
-    def evalLocalVarAssignment(name: Symbol, value: SyntaxTree): EvaluationState = {
-      val EvaluationState(v, ks, ls, self) = eval(value, e)
-
-      EvaluationState(v, ks, ls + (name -> v), self)
+    def evalIvarIdentifier(name: Symbol): EvalTransition = State[EvalState, RubyObject] { state =>
+      (state, state.self.ivars.get(name).getOrElse(RubyNilClass))
     }
 
-    def evalConstant(name: Symbol): EvaluationState = e.klasses get name match {
-      case Some(klass) => e.withValue(klass)
-      case None => throw new Exception(s"unitialized constant ${name.toString}")
+    def evalKlassDef(name: Symbol, ts: List[AST]): EvalTransition = for {
+      prevSelf <- State.inspect[EvalState, RubyObject](_.self)
+      _ <- State.modify[EvalState](_.setSelf(RubyObject('Class)))
+      _ <- evals(ts)
+      EvalState(_, _, newSelf) <- State.get[EvalState]
+      _ <- State.modify[EvalState](_.addKlass(name -> newSelf).setSelf(prevSelf))
+    } yield RubySymbol(name)
+
+    def evalMethodDef(name: Symbol, params: List[Symbol], ts: List[AST]): EvalTransition = for {
+      _ <- State.modify[EvalState](_.addMethodOnSelf(name -> RubyMethod(params, ts)))
+    } yield RubySymbol(name)
+
+    def evalIf(p: AST, yeses: List[AST], nos: List[AST]): EvalTransition = for {
+      predicateResult <- eval(p)
+      result <- predicateResult match {
+        case RubyFalseClass | RubyNilClass => evals(nos)
+        case _ => evals(yeses)
+      }
+    } yield result
+
+    def evalArgs(args: List[AST]): State[EvalState, Seq[RubyObject]] = {
+      val initialValue = State.pure[EvalState, Seq[RubyObject]](Seq.empty[RubyObject])
+
+      args.foldLeft(initialValue) { (acc, arg) =>
+        eval(arg).flatMap { evaldArg => acc.map(_ ++ Seq(evaldArg)) }
+      }
     }
 
-    def evalIvarIdentifier(name: Symbol): EvaluationState = e.self.ivars get name match {
-      case Some(value) => e.withValue(value)
-      case None => e.withValue(RubyNilClass)
-    }
-
-    def evalKlassDef(name: Symbol, ts: List[SyntaxTree]): EvaluationState = {
-      val EvaluationState(_, klasses, localVars, self) = evals(ts, e.withSelf(RubyObject('Class)))
-
-      EvaluationState(RubySymbol(name), klasses + (name -> self), localVars, e.self)
-    }
-
-    def evalMethodDef(name: Symbol, params: List[Symbol], ts: List[SyntaxTree]): EvaluationState =
-      e.withSelf(e.self.withMethod(name -> RubyMethod(params, ts))).withValue(RubySymbol(name))
-
-    def evalIf(p: SyntaxTree, yeses: List[SyntaxTree], nos: List[SyntaxTree]): EvaluationState =
-      eval(p, e) match {
-
-      case state @ EvaluationState(RubyFalseClass | RubyNilClass, ks, ls, self) => evals(nos, state)
-      case state => evals(yeses, state)
-    }
-
-    def evalInvocationWithImplicitReceiver(msg: Symbol, args: List[SyntaxTree]): EvaluationState = {
-      e.localVars get msg match {
-        case Some(obj) => e.withValue(obj)
-        case None => e.self.methods get msg match {
-          case Some(method) =>
-            val evaldArgs = args.scanLeft(e) { (acc, t) => eval(t, acc) }
-
-            evaldArgs.lastOption match {
-              case Some(state) =>
-                val EvaluationState(newValue, _, _, newSelf) =
-                  method.invoke(
-                    evaldArgs.map(_.value).drop(1).toSeq,
-                    ts => evals(ts, state.withLocalVars(VariableMap.empty)))
-
-                state.withValue(newValue).withSelf(newSelf)
-              case None => throw new Exception("Sequence#scanLeft returned an empty sequence")
-            }
+    def evalInvocationWithImplicitReceiver(msg: Symbol, args: List[AST]): EvalTransition = for {
+      EvalState(_, prevLocalVars, prevSelf) <- State.get
+      result <- prevLocalVars get msg match {
+        case Some(obj) => State.pure[EvalState, RubyObject](obj)
+        case None => prevSelf.methods get msg match {
+          case Some(method) => method.invoke(evalArgs(args), evals)
           case None => throw new Exception(s"undefined local variable or method `${msg.toString}'")
         }
       }
-    }
+      _ <- State.modify[EvalState](_.setLocalVars(prevLocalVars))
+    } yield result
 
-    def evalInvocationWithReceiver(
-      recvr: SyntaxTree,
-      msg: Symbol,
-      args: List[SyntaxTree]
-    ): EvaluationState = {
-      val receivingState = eval(recvr, e)
+    def evalInvocationWithReceiver(recvr: AST, msg: Symbol, args: List[AST]): EvalTransition = for {
+      evaldReceiver <- eval(recvr)
+      EvalState(_, prevLocalVars, _) <- State.get[EvalState]
+      result <- {
+        val method = evaldReceiver.methods.get(msg).getOrElse(
+          throw new Exception(s"undefined method `${msg.toString}' for `${evaldReceiver}'")
+        )
 
-      receivingState.value.methods get msg match {
-        case Some(method) =>
-          val evaldArgs = args.scanLeft(receivingState) { (acc, t) => eval(t, acc) }
-
-          evaldArgs.lastOption match {
-            case Some(state) =>
-              val EvaluationState(returnValue, _, _, newSelf) = method.invoke(
-                evaldArgs.map(_.value).drop(1).toSeq,
-                ts => evals(
-                  ts,
-                  state.withSelf(receivingState.value).withLocalVars(VariableMap.empty)))
-
-              recvr match {
-                case InvocationWithImplicitReceiverNode(name, _) =>
-                  val newLocalVars = state.localVars + (name -> newSelf)
-
-                  EvaluationState(returnValue, state.klasses, newLocalVars, state.self)
-                case IvarIdentifierNode(name) =>
-                  val selfWithNewIvar = state.self.withIvar(name -> newSelf)
-
-                  EvaluationState(returnValue, state.klasses, state.localVars, selfWithNewIvar)
-                case v => state.withValue(returnValue)
-              }
-            case None => throw new Exception("Sequence#scanLeft returned an empty sequence")
-          }
-        case None =>
-          throw new Exception(s"undefined method `${msg.toString}' for ${receivingState.value}")
+        method.invoke(evalArgs(args), evals)
       }
-    }
+      _ <- State.modify[EvalState](_.setLocalVars(prevLocalVars))
+    } yield result
 
-    def evalUnless(p: SyntaxTree, ts: List[SyntaxTree]): EvaluationState = eval(p, e) match {
-      case EvaluationState(RubyNilClass | RubyFalseClass, ks, ls, self) =>
-        EvaluationState(RubyNilClass, ks, ls, self)
-      case state => evals(ts, state)
-    }
+    def evalUnless(p: AST, ts: List[AST]): EvalTransition = for {
+      predicateResult <- eval(p)
+      result <- predicateResult match {
+        case RubyFalseClass | RubyNilClass => evals(ts)
+        case _ => State.pure[EvalState, RubyObject](RubyNilClass)
+      }
+    } yield result
 
     t match {
       case LocalVarAssignmentNode(name, value) => evalLocalVarAssignment(name, value)
@@ -133,14 +117,14 @@ object Evaluator {
       case IvarIdentifierNode(name) => evalIvarIdentifier(name)
       case IdentifierNode(name) => throw new Exception("attempted to eval an identifier")
       case ConstantNode(name) => evalConstant(name)
-      case StringNode(s) => e.withValue(RubyString(s))
-      case SymbolNode(s) => e.withValue(RubySymbol(s))
+      //case StringNode(s) => e.withValue(RubyString(s))
+      //case SymbolNode(s) => e.withValue(RubySymbol(s))
       //case Integer_(n) => evalInteger(n)
       //case Float_(n) => evalFloat(n)
-      case TrueNode => e.withValue(RubyTrueClass)
-      case FalseNode => e.withValue(RubyFalseClass)
-      case NilNode => e.withValue(RubyNilClass)
-      case RubyObjectContainerNode(obj) => e.withValue(obj)
+      case TrueNode => State.pure[EvalState, RubyObject](RubyTrueClass)
+      case FalseNode => State.pure[EvalState, RubyObject](RubyFalseClass)
+      case NilNode => State.pure[EvalState, RubyObject](RubyNilClass)
+      case RubyObjectContainerNode(obj) => State.pure[EvalState, RubyObject](obj)
       case _ => throw new Exception("unimplemented")
     }
   }
