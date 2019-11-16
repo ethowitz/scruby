@@ -1,17 +1,17 @@
 package com.ethowitz.sruby.evaluator
 
-import com.ethowitz.sruby.parser.SyntaxTree
+import cats.data.State
+import com.ethowitz.sruby.parser.AST
 import com.ethowitz.sruby.core.RubyObject
 
-class RubyConstructor(params: Seq[Symbol], ts: List[SyntaxTree]) extends RubyMethod(params, ts) {
+class RubyConstructor(params: Seq[Symbol], ts: List[AST]) extends RubyMethod(params, ts) {
   override def invoke(
-    args: Seq[RubyObject],
-    evals: List[SyntaxTree] => EvaluationState
-  ): EvaluationState = {
-    val EvaluationState(v, ks, ls, s) = super.invoke(args, evals)
-
-    EvaluationState(s, ks, ls, s)
-  }
+    args: State[EvalState, Seq[RubyObject]],
+    evals: List[AST] => State[EvalState, RubyObject]
+  ): State[EvalState, RubyObject] = for {
+    _ <- super.invoke(args, evals)
+    EvalState(_, _, self) <- State.get
+  } yield self
 }
 
 object RubyConstructor {

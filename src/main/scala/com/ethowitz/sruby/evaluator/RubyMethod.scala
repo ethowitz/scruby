@@ -1,18 +1,23 @@
 package com.ethowitz.sruby.evaluator
 
-import com.ethowitz.sruby.parser.SyntaxTree
+import cats.data.State
+import com.ethowitz.sruby.parser.AST
 import com.ethowitz.sruby.core.RubyObject
 
-class RubyMethod(val params: Seq[Symbol], val ts: List[SyntaxTree]) {
-  def invoke(args: Seq[RubyObject], evals: List[SyntaxTree] => EvaluationState): EvaluationState = {
-    args.length == params.length match {
+class RubyMethod(val params: Seq[Symbol], val ts: List[AST]) {
+  def invoke(
+    args: State[EvalState, Seq[RubyObject]],
+    evals: List[AST] => State[EvalState, RubyObject]
+  ): State[EvalState, RubyObject] = args.flatMap { evaldArgs =>
+    evaldArgs.length == params.length match {
       case true =>
-        val bindings: Map[Symbol, RubyObject] = (params zip args).toMap
+        val bindings = (params zip evaldArgs).toMap
+        val tsWithBoundVars = ts.map(_.withBoundVars(bindings))
 
-        evals(ts.map(_.withBoundVars(bindings)))
+        for { result <- evals(tsWithBoundVars) } yield result
       case false =>
         val errorMessage =
-          s"wrong number of arguments (given ${args.length}, expected ${params.length})"
+          s"wrong number of arguments (given ${evaldArgs.length}, expected ${params.length})"
 
         throw new Exception(errorMessage)
     }
@@ -20,6 +25,6 @@ class RubyMethod(val params: Seq[Symbol], val ts: List[SyntaxTree]) {
 }
 
 object RubyMethod {
-  def apply(arg: SyntaxTree): RubyMethod = RubyMethod(List(), List(arg))
-  def apply(params: Seq[Symbol], ts: List[SyntaxTree]): RubyMethod = new RubyMethod(params, ts)
+  def apply(arg: AST): RubyMethod = RubyMethod(List(), List(arg))
+  def apply(params: Seq[Symbol], ts: List[AST]): RubyMethod = new RubyMethod(params, ts)
 }

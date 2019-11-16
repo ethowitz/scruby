@@ -15,7 +15,7 @@ object RubyParser extends Parsers {
 
 
   // Public methods
-  def apply(tokens: Seq[Token]): Either[ParserError, List[SyntaxTree]] = {
+  def apply(tokens: Seq[Token]): Either[ParserError, List[AST]] = {
     val reader = new TokenReader(tokens)
 
     phrase(repsep(definitionPattern | expressionPattern, SeparatorToken))(reader) match {
@@ -25,11 +25,11 @@ object RubyParser extends Parsers {
   }
 
   // Private methods
-  private def expressionPattern: Parser[SyntaxTree] = ivarAssignmentPattern |
+  private def expressionPattern: Parser[AST] = ivarAssignmentPattern |
     localVarAssignmentPattern | conditionalPattern | invocationPattern | ivarIdentifierPattern |
     nonKeywordIdentifierPattern | literalPattern
 
-  private def definitionPattern: Parser[SyntaxTree] = {
+  private def definitionPattern: Parser[AST] = {
     def klassDefPattern: Parser[KlassDefNode] = {
       def klassTokenPattern: Parser[Token] = elem(IdentifierToken("class"))
       def klassNamePattern: Parser[ConstantNode] =
@@ -50,7 +50,7 @@ object RubyParser extends Parsers {
         methodNamePattern ~ paramListPattern.?
       }
 
-      def methodBodyPattern: Parser[List[SyntaxTree]] =
+      def methodBodyPattern: Parser[List[AST]] =
         repsepWithNewline(expressionPattern) <~ endTokenPattern
 
       (methodHeaderPattern ~ SeparatorToken ~ methodBodyPattern) ^^ {
@@ -61,29 +61,29 @@ object RubyParser extends Parsers {
       }
     }
 
-    klassDefPattern.|[SyntaxTree](methodDefPattern)
+    klassDefPattern.|[AST](methodDefPattern)
   }
 
-  private def conditionalPattern: Parser[SyntaxTree] = {
+  private def conditionalPattern: Parser[AST] = {
     def ifPattern: Parser[IfNode] = {
       def ifTokenPattern: Parser[Token] = elem(IdentifierToken("if"))
       def elseTokenPattern: Parser[Token] = elem(IdentifierToken("else"))
-      val predicatePattern: Parser[SyntaxTree] =
+      val predicatePattern: Parser[AST] =
         ifTokenPattern ~> expressionPattern <~ SeparatorToken
-      val elsePattern: Parser[List[SyntaxTree]] =
+      val elsePattern: Parser[List[AST]] =
         elseTokenPattern ~> SeparatorToken ~> repsepWithNewline(expressionPattern)
 
-      def elsifPattern: Parser[List[SyntaxTree] => IfNode] = {
+      def elsifPattern: Parser[List[AST] => IfNode] = {
         def elsifTokenPattern: Parser[Token] = elem(IdentifierToken("elsif"))
 
         (elsifTokenPattern ~> expressionPattern ~ SeparatorToken ~
             repsepWithNewline(expressionPattern)) ^^ {
           case predicate ~ _ ~ yesBranch =>
-            (noBranch: List[SyntaxTree]) => IfNode(predicate, yesBranch, noBranch)
+            (noBranch: List[AST]) => IfNode(predicate, yesBranch, noBranch)
         }
       }
 
-      val build: (List[SyntaxTree] => IfNode, List[SyntaxTree]) => List[IfNode] =
+      val build: (List[AST] => IfNode, List[AST]) => List[IfNode] =
         (acc, ifExp) => List(acc(ifExp))
 
       (predicatePattern ~ repsepWithNewline(expressionPattern) ~ rep(elsifPattern) ~ elsePattern.?
@@ -104,16 +104,16 @@ object RubyParser extends Parsers {
       }
     }
 
-    ifPattern.|[SyntaxTree](unlessPattern)
+    ifPattern.|[AST](unlessPattern)
   }
 
   // scalastyle:off method.length
   private def invocationPattern: Parser[InvocationNode] = {
     def leftmostInvocationPattern: Parser[InvocationNode] = {
-      def innerInvocationPattern: Parser[Option[SyntaxTree] => InvocationNode] = {
+      def innerInvocationPattern: Parser[Option[AST] => InvocationNode] = {
         (PeriodToken ~> messagePattern(identifierPattern) ~ innerInvocationPattern.?) ^^ {
           case partialInvocation ~ None => partialInvocation
-          case partialInvocation ~ Some(innerPartialInvocation) => (receiver: Option[SyntaxTree]) =>
+          case partialInvocation ~ Some(innerPartialInvocation) => (receiver: Option[AST]) =>
             innerPartialInvocation(Some(partialInvocation(receiver)))
         }
       }
@@ -127,7 +127,7 @@ object RubyParser extends Parsers {
       }
 
       def nonMessageInvocationPattern: Parser[InvocationNode] = {
-        def nonMessageReceiverPattern: Parser[SyntaxTree] = literalPattern | conditionalPattern |
+        def nonMessageReceiverPattern: Parser[AST] = literalPattern | conditionalPattern |
           ivarIdentifierPattern | constantPattern
 
         (nonMessageReceiverPattern ~ innerInvocationPattern) ^^ {
@@ -138,29 +138,29 @@ object RubyParser extends Parsers {
       messageInvocationPattern | nonMessageInvocationPattern
     }
 
-    def messagePattern(id: Parser[IdentifierNode]): Parser[Option[SyntaxTree] => InvocationNode] = {
-      def messageNoArgsPattern: Parser[Option[SyntaxTree] => InvocationNode] = id ^^ {
-        case IdentifierNode(name) => (receiver: Option[SyntaxTree]) => receiver match {
+    def messagePattern(id: Parser[IdentifierNode]): Parser[Option[AST] => InvocationNode] = {
+      def messageNoArgsPattern: Parser[Option[AST] => InvocationNode] = id ^^ {
+        case IdentifierNode(name) => (receiver: Option[AST]) => receiver match {
           case Some(r) => InvocationWithReceiverNode(r, name, Nil)
           case None => InvocationWithImplicitReceiverNode(name, Nil)
         }
       }
 
-      def messageNoParensPattern: Parser[Option[SyntaxTree] => InvocationNode] = {
+      def messageNoParensPattern: Parser[Option[AST] => InvocationNode] = {
         (id ~ rep1sep(expressionPattern, CommaToken) ~> failure("no") |
             id ~ rep1sep(expressionPattern, CommaToken)) ^^ {
-          case IdentifierNode(name) ~ args => (receiver: Option[SyntaxTree]) => receiver match {
+          case IdentifierNode(name) ~ args => (receiver: Option[AST]) => receiver match {
             case Some(r) => InvocationWithReceiverNode(r, name, args)
             case None => InvocationWithImplicitReceiverNode(name, args)
           }
         }
       }
 
-      def messageParensPattern: Parser[Option[SyntaxTree] => InvocationNode] = {
+      def messageParensPattern: Parser[Option[AST] => InvocationNode] = {
         (id ~ OpeningParenthesisToken ~ repsep(expressionPattern, CommaToken)
             ~ ClosingParenthesisToken) ^^ {
           case IdentifierNode(name) ~ _ ~ args ~ _ =>
-            (receiver: Option[SyntaxTree]) => receiver match {
+            (receiver: Option[AST]) => receiver match {
               case Some(r) => InvocationWithReceiverNode(r, name, args)
               case None => InvocationWithImplicitReceiverNode(name, args)
             }
@@ -174,14 +174,14 @@ object RubyParser extends Parsers {
   }
   // scalastyle:on method.length
 
-  private def ivarAssignmentPattern: Parser[SyntaxTree] = {
-    (IvarPrefixToken ~> (identifierPattern.|[SyntaxTree](constantPattern)) ~ AssignerToken ~
+  private def ivarAssignmentPattern: Parser[AST] = {
+    (IvarPrefixToken ~> (identifierPattern.|[AST](constantPattern)) ~ AssignerToken ~
         expressionPattern) ^^ {
       case IdentifierNode(name) ~ _ ~ value => IvarAssignmentNode(name, value)
     }
   }
 
-  private def localVarAssignmentPattern: Parser[SyntaxTree] =
+  private def localVarAssignmentPattern: Parser[AST] =
     (nonKeywordIdentifierPattern ~ AssignerToken ~ expressionPattern) ^^ {
       case IdentifierNode(name) ~ _ ~ value => LocalVarAssignmentNode(name, value)
     }
@@ -204,7 +204,7 @@ object RubyParser extends Parsers {
 
   private def endTokenPattern: Parser[Token] = elem(IdentifierToken("end"))
 
-  private def literalPattern: Parser[SyntaxTree] = {
+  private def literalPattern: Parser[AST] = {
     accept("literal", {
       case StringToken(s) => StringNode(s)
       case SymbolToken(s) => SymbolNode(Symbol(s))
