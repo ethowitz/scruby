@@ -63,6 +63,5 @@ object Lexer extends RegexParsers {
     openingParenthesis | closingParenthesis | openingCurlyBracket | closingCurlyBracket |
     openingSquareBracket | closingSquareBracket | not | colon | separator | whitespace
 
-
   private def tokens: Parser[List[Token]] = phrase(rep1(parsingGroup))
 }

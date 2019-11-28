@@ -1,5 +1,4 @@
 target
-*.rb
 .metals/
 .bloop/
 project/metals.sbt

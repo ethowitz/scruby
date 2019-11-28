@@ -21,6 +21,7 @@ case object UnlessToken extends Token
 case object ElsifToken extends Token
 case object ElseToken extends Token
 case object EndToken extends Token
+case object SelfToken extends Token
 case object AmpersandToken extends Token
 case object CommentToken extends Token
 case object ArrowToken extends Token

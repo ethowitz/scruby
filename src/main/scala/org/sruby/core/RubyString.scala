@@ -1,15 +1,16 @@
 package org.sruby.core
 
 import org.sruby.evaluator.MethodMap
-import org.sruby.evaluator.VariableMap
 
-class RubyString(val s: String, ms: MethodMap)
-  extends RubyObject('Class, Some('String), ms, VariableMap.empty) {
+class RubyString(val s: String, instanceMethods: MethodMap, klassMethods: MethodMap)
+  extends RubyKlass('String, instanceMethods, klassMethods) {
 
   override def toString: String = s
 }
 
 object RubyString {
-  def apply(s: String, ms: MethodMap): RubyString = new RubyString(s, ms)
-  def apply(s: String): RubyString = new RubyString(s, MethodMap.empty)
+  def apply(s: String, instanceMethods: MethodMap, klassMethods: MethodMap): RubyString =
+    new RubyString(s, instanceMethods, klassMethods)
+
+  def apply(s: String): RubyString = new RubyString(s, MethodMap.empty, MethodMap.empty)
 }

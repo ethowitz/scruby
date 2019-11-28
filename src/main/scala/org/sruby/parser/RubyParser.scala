@@ -6,78 +6,100 @@ import scala.util.parsing.combinator._
 import scala.util.parsing.input._
 
 object RubyParser extends Parsers {
-  // Types
+  // Public members
   override type Elem = Token
 
-  // Attributes
   val keywords = List("def", "end", "true", "false", "class", "if", "elsif", "unless", "else",
-    "nil")
+    "nil", "self")
 
-
-  // Public methods
   def apply(tokens: Seq[Token]): Either[ParserError, List[AST]] = {
     val reader = new TokenReader(tokens)
 
-    phrase(repsep(definitionPattern | expressionPattern, SeparatorToken))(reader) match {
+    phrase(repsep(definitionParser | expressionParser, SeparatorToken))(reader) match {
       case NoSuccess(msg, next) => Left(ParserError(msg))
       case Success(result, next) => Right(result)
     }
   }
 
   // Private methods
-  private def expressionPattern: Parser[AST] = ivarAssignmentPattern |
-    localVarAssignmentPattern | conditionalPattern | invocationPattern | ivarIdentifierPattern |
-    nonKeywordIdentifierPattern | literalPattern
+  private def expressionParser: Parser[AST] = ivarAssignmentParser |
+    localVarAssignmentParser | conditionalParser | invocationParser | selfParser |
+    ivarIdentifierParser | nonKeywordIdentifierParser | literalParser
 
-  private def definitionPattern: Parser[AST] = {
-    def klassDefPattern: Parser[KlassDefNode] = {
-      def klassTokenPattern: Parser[Token] = elem(IdentifierToken("class"))
-      def klassNamePattern: Parser[ConstantNode] =
-        klassTokenPattern ~> constantPattern <~ SeparatorToken
+  // scalastyle:off method.length
+  private def definitionParser: Parser[AST] = {
+    def klassDefParser: Parser[KlassDefNode] = {
+      def klassTokenParser: Parser[Token] = elem(IdentifierToken("class"))
+      def klassNameParser: Parser[ConstantNode] =
+        klassTokenParser ~> constantParser <~ SeparatorToken
 
-      (klassNamePattern ~ repsepWithNewline(definitionPattern) <~ endTokenPattern) ^^ {
-        case ConstantNode(name) ~ expressionPatterns => KlassDefNode(name, expressionPatterns)
+      (klassNameParser ~ repsepWithNewline(definitionParser) <~ endTokenParser) ^^ {
+        case ConstantNode(name) ~ expressionParsers => KlassDefNode(name, expressionParsers)
       }
     }
 
-    def methodDefPattern: Parser[MethodDefNode] = {
-      def methodHeaderPattern: Parser[IdentifierNode ~ Option[List[IdentifierNode]]] = {
-        def defTokenPattern: Parser[Token] = elem(IdentifierToken("def"))
-        def methodNamePattern: Parser[IdentifierNode] = defTokenPattern ~> identifierPattern
-        def paramListPattern: Parser[List[IdentifierNode]] = OpeningParenthesisToken ~>
-          repsep(nonKeywordIdentifierPattern, CommaToken) <~ ClosingParenthesisToken
+    def methodDefParser: Parser[MethodDefNode] = {
+      def defTokenParser: Parser[Token] = elem(IdentifierToken("def"))
 
-        methodNamePattern ~ paramListPattern.?
+      def paramListParser: Parser[List[IdentifierNode]] = OpeningParenthesisToken ~>
+        repsep(nonKeywordIdentifierParser, CommaToken) <~ ClosingParenthesisToken
+
+      def methodBodyParser: Parser[List[AST]] =
+        repsepWithNewline(expressionParser) <~ endTokenParser
+
+      def instanceMethodDefParser: Parser[InstanceMethodDefNode] = {
+        def instanceMethodHeaderParser: Parser[IdentifierNode ~ Option[List[IdentifierNode]]] = {
+          def methodNameParser: Parser[IdentifierNode] = defTokenParser ~>
+            identifierParser
+
+          methodNameParser ~ paramListParser.?
+        }
+
+        (instanceMethodHeaderParser ~ SeparatorToken ~ methodBodyParser) ^^ {
+          case IdentifierNode(name) ~ Some(params) ~ _ ~ expressionParsers =>
+            InstanceMethodDefNode(name, params.map(_.name), expressionParsers)
+          case IdentifierNode(name) ~ None ~ _ ~ expressionParsers =>
+            InstanceMethodDefNode(name, List.empty[Symbol], expressionParsers)
+        }
       }
 
-      def methodBodyPattern: Parser[List[AST]] =
-        repsepWithNewline(expressionPattern) <~ endTokenPattern
+      def klassMethodDefParser: Parser[KlassMethodDefNode] = {
+        def klassMethodHeaderParser: Parser[IdentifierNode ~ Option[List[IdentifierNode]]] = {
+          def methodNameParser: Parser[IdentifierNode] = defTokenParser ~> selfParser ~>
+            PeriodToken ~> identifierParser
 
-      (methodHeaderPattern ~ SeparatorToken ~ methodBodyPattern) ^^ {
-        case IdentifierNode(name) ~ Some(params) ~ _ ~ expressionPatterns =>
-          MethodDefNode(name, params.map(_.name), expressionPatterns)
-        case IdentifierNode(name) ~ None ~ _ ~ expressionPatterns =>
-          MethodDefNode(name, List.empty[Symbol], expressionPatterns)
+          methodNameParser ~ paramListParser.?
+        }
+
+        (klassMethodHeaderParser ~ SeparatorToken ~ methodBodyParser) ^^ {
+          case IdentifierNode(name) ~ Some(params) ~ _ ~ expressionParsers =>
+            KlassMethodDefNode(name, params.map(_.name), expressionParsers)
+          case IdentifierNode(name) ~ None ~ _ ~ expressionParsers =>
+            KlassMethodDefNode(name, List.empty[Symbol], expressionParsers)
+        }
       }
+
+      instanceMethodDefParser.|[MethodDefNode](klassMethodDefParser)
     }
 
-    klassDefPattern.|[AST](methodDefPattern)
+    klassDefParser | methodDefParser
   }
+  // scalastyle:on method.length
 
-  private def conditionalPattern: Parser[AST] = {
-    def ifPattern: Parser[IfNode] = {
-      def ifTokenPattern: Parser[Token] = elem(IdentifierToken("if"))
-      def elseTokenPattern: Parser[Token] = elem(IdentifierToken("else"))
-      val predicatePattern: Parser[AST] =
-        ifTokenPattern ~> expressionPattern <~ SeparatorToken
-      val elsePattern: Parser[List[AST]] =
-        elseTokenPattern ~> SeparatorToken ~> repsepWithNewline(expressionPattern)
+  private def conditionalParser: Parser[ConditionalNode] = {
+    def ifParser: Parser[IfNode] = {
+      def ifTokenParser: Parser[Token] = elem(IdentifierToken("if"))
+      def elseTokenParser: Parser[Token] = elem(IdentifierToken("else"))
+      val predicateParser: Parser[AST] =
+        ifTokenParser ~> expressionParser <~ SeparatorToken
+      val elseParser: Parser[List[AST]] =
+        elseTokenParser ~> SeparatorToken ~> repsepWithNewline(expressionParser)
 
-      def elsifPattern: Parser[List[AST] => IfNode] = {
-        def elsifTokenPattern: Parser[Token] = elem(IdentifierToken("elsif"))
+      def elsifParser: Parser[List[AST] => IfNode] = {
+        def elsifTokenParser: Parser[Token] = elem(IdentifierToken("elsif"))
 
-        (elsifTokenPattern ~> expressionPattern ~ SeparatorToken ~
-            repsepWithNewline(expressionPattern)) ^^ {
+        (elsifTokenParser ~> expressionParser ~ SeparatorToken ~
+            repsepWithNewline(expressionParser)) ^^ {
           case predicate ~ _ ~ yesBranch =>
             (noBranch: List[AST]) => IfNode(predicate, yesBranch, noBranch)
         }
@@ -86,8 +108,8 @@ object RubyParser extends Parsers {
       val build: (List[AST] => IfNode, List[AST]) => List[IfNode] =
         (acc, ifExp) => List(acc(ifExp))
 
-      (predicatePattern ~ repsepWithNewline(expressionPattern) ~ rep(elsifPattern) ~ elsePattern.?
-          <~ endTokenPattern) ^^ {
+      (predicateParser ~ repsepWithNewline(expressionParser) ~ rep(elsifParser) ~ elseParser.?
+          <~ endTokenParser) ^^ {
         case predicate ~ yesBranch ~ elsifs ~ Some(noBranch) =>
           IfNode(predicate, yesBranch, elsifs.foldRight(noBranch)(build))
         case predicate ~ yesBranch ~ elsifs ~ None =>
@@ -95,69 +117,66 @@ object RubyParser extends Parsers {
       }
     }
 
-    def unlessPattern: Parser[UnlessNode] = {
+    def unlessParser: Parser[UnlessNode] = {
       def unlessToken: Parser[Token] = elem(IdentifierToken("unless"))
 
-      (unlessToken ~ expressionPattern ~ SeparatorToken ~ repsepWithNewline(expressionPattern) ~
-          endTokenPattern) ^^ {
-        case _ ~ predicate ~ _ ~ expressionPatterns ~ _ => UnlessNode(predicate, expressionPatterns)
+      (unlessToken ~ expressionParser ~ SeparatorToken ~ repsepWithNewline(expressionParser) ~
+          endTokenParser) ^^ {
+        case _ ~ predicate ~ _ ~ expressionParsers ~ _ => UnlessNode(predicate, expressionParsers)
       }
     }
 
-    ifPattern.|[AST](unlessPattern)
+    ifParser.|[ConditionalNode](unlessParser)
   }
 
   // scalastyle:off method.length
-  private def invocationPattern: Parser[InvocationNode] = {
-    def leftmostInvocationPattern: Parser[InvocationNode] = {
-      def innerInvocationPattern: Parser[Option[AST] => InvocationNode] = {
-        (PeriodToken ~> messagePattern(identifierPattern) ~ innerInvocationPattern.?) ^^ {
+  private def invocationParser: Parser[InvocationNode] = {
+    def leftmostInvocationParser: Parser[InvocationNode] = {
+      def innerInvocationParser: Parser[Option[AST] => InvocationNode] =
+        (PeriodToken ~> messageParser(identifierParser) ~ innerInvocationParser.?) ^^ {
           case partialInvocation ~ None => partialInvocation
           case partialInvocation ~ Some(innerPartialInvocation) => (receiver: Option[AST]) =>
             innerPartialInvocation(Some(partialInvocation(receiver)))
         }
-      }
 
-      def messageInvocationPattern: Parser[InvocationNode] = {
-        (messagePattern(nonKeywordIdentifierPattern) ~ innerInvocationPattern.?) ^^ {
+      def messageInvocationParser: Parser[InvocationNode] =
+        (messageParser(nonKeywordIdentifierParser) ~ innerInvocationParser.?) ^^ {
           case partialInvocation ~ None => partialInvocation(None)
           case leftmostPartialInvocation ~ Some(partialInvocation) =>
             partialInvocation(Some(leftmostPartialInvocation(None)))
         }
-      }
 
-      def nonMessageInvocationPattern: Parser[InvocationNode] = {
-        def nonMessageReceiverPattern: Parser[AST] = literalPattern | conditionalPattern |
-          ivarIdentifierPattern | constantPattern
+      def nonMessageInvocationParser: Parser[InvocationNode] = {
+        def nonMessageReceiverParser: Parser[AST] = literalParser | conditionalParser |
+          ivarIdentifierParser | constantParser
 
-        (nonMessageReceiverPattern ~ innerInvocationPattern) ^^ {
+        (nonMessageReceiverParser ~ innerInvocationParser) ^^ {
           case receiver ~ partialInvocation => partialInvocation(Some(receiver))
         }
       }
 
-      messageInvocationPattern | nonMessageInvocationPattern
+      messageInvocationParser | nonMessageInvocationParser
     }
 
-    def messagePattern(id: Parser[IdentifierNode]): Parser[Option[AST] => InvocationNode] = {
-      def messageNoArgsPattern: Parser[Option[AST] => InvocationNode] = id ^^ {
+    def messageParser(id: Parser[IdentifierNode]): Parser[Option[AST] => InvocationNode] = {
+      def messageNoArgsParser: Parser[Option[AST] => InvocationNode] = id ^^ {
         case IdentifierNode(name) => (receiver: Option[AST]) => receiver match {
           case Some(r) => InvocationWithReceiverNode(r, name, Nil)
           case None => InvocationWithImplicitReceiverNode(name, Nil)
         }
       }
 
-      def messageNoParensPattern: Parser[Option[AST] => InvocationNode] = {
-        (id ~ rep1sep(expressionPattern, CommaToken) ~> failure("no") |
-            id ~ rep1sep(expressionPattern, CommaToken)) ^^ {
+      def messageNoParensParser: Parser[Option[AST] => InvocationNode] =
+        (id ~ rep1sep(expressionParser, CommaToken) ~> failure("no") |
+            id ~ rep1sep(expressionParser, CommaToken)) ^^ {
           case IdentifierNode(name) ~ args => (receiver: Option[AST]) => receiver match {
             case Some(r) => InvocationWithReceiverNode(r, name, args)
             case None => InvocationWithImplicitReceiverNode(name, args)
           }
-        }
       }
 
-      def messageParensPattern: Parser[Option[AST] => InvocationNode] = {
-        (id ~ OpeningParenthesisToken ~ repsep(expressionPattern, CommaToken)
+      def messageParensParser: Parser[Option[AST] => InvocationNode] =
+        (id ~ OpeningParenthesisToken ~ repsep(expressionParser, CommaToken)
             ~ ClosingParenthesisToken) ^^ {
           case IdentifierNode(name) ~ _ ~ args ~ _ =>
             (receiver: Option[AST]) => receiver match {
@@ -165,63 +184,60 @@ object RubyParser extends Parsers {
               case None => InvocationWithImplicitReceiverNode(name, args)
             }
         }
-      }
 
-      messageParensPattern | messageNoParensPattern | messageNoArgsPattern
+      messageParensParser | messageNoParensParser | messageNoArgsParser
     }
 
-    leftmostInvocationPattern
+    leftmostInvocationParser
   }
   // scalastyle:on method.length
 
-  private def ivarAssignmentPattern: Parser[AST] = {
-    (IvarPrefixToken ~> (identifierPattern.|[AST](constantPattern)) ~ AssignerToken ~
-        expressionPattern) ^^ {
+  private def ivarAssignmentParser: Parser[AST] =
+    (IvarPrefixToken.~>[AST]((identifierParser.|[AST](constantParser))) ~ AssignerToken ~
+        expressionParser) ^^ {
       case IdentifierNode(name) ~ _ ~ value => IvarAssignmentNode(name, value)
     }
-  }
 
-  private def localVarAssignmentPattern: Parser[AST] =
-    (nonKeywordIdentifierPattern ~ AssignerToken ~ expressionPattern) ^^ {
+  private def localVarAssignmentParser: Parser[AST] =
+    (nonKeywordIdentifierParser ~ AssignerToken ~ expressionParser) ^^ {
       case IdentifierNode(name) ~ _ ~ value => LocalVarAssignmentNode(name, value)
     }
 
-  private def constantPattern: Parser[ConstantNode] =
+  private def selfParser: Parser[SelfNode.type] =
+    elem(IdentifierToken("self")) ^^ { case _ => SelfNode }
+
+  private def constantParser: Parser[ConstantNode] =
     accept("constant", { case ConstantToken(name) => ConstantNode(Symbol(name)) })
 
-  private def identifierPattern: Parser[IdentifierNode] =
+  private def identifierParser: Parser[IdentifierNode] =
     accept("identifier", { case IdentifierToken(name) => IdentifierNode(Symbol(name)) })
 
-  private def nonKeywordIdentifierPattern: Parser[IdentifierNode] = accept("identifier", {
+  private def nonKeywordIdentifierParser: Parser[IdentifierNode] = accept("identifier", {
     case IdentifierToken(name) if !keywords.contains(name) => IdentifierNode(Symbol(name))
   })
 
-  private def ivarIdentifierPattern: Parser[IvarIdentifierNode] = {
-    (IvarPrefixToken ~> identifierPattern) ^^ {
+  private def ivarIdentifierParser: Parser[IvarIdentifierNode] =
+    (IvarPrefixToken ~> identifierParser) ^^ {
       case IdentifierNode(name) => IvarIdentifierNode(name)
     }
-  }
 
-  private def endTokenPattern: Parser[Token] = elem(IdentifierToken("end"))
+  private def endTokenParser: Parser[Token] = elem(IdentifierToken("end"))
 
-  private def literalPattern: Parser[AST] = {
-    accept("literal", {
-      case StringToken(s) => StringNode(s)
-      case SymbolToken(s) => SymbolNode(Symbol(s))
-      case IntegerToken(n) => IntegerNode(n)
-      case FloatToken(n) => FloatNode(n)
-      case IdentifierToken("true") => TrueNode
-      case IdentifierToken("false") => FalseNode
-      case IdentifierToken("nil") => NilNode
-    })
-  }
+  private def literalParser: Parser[AST] = accept("literal", {
+    case StringToken(s) => StringNode(s)
+    case SymbolToken(s) => SymbolNode(Symbol(s))
+    case IntegerToken(n) => IntegerNode(n)
+    case FloatToken(n) => FloatNode(n)
+    case IdentifierToken("true") => TrueNode
+    case IdentifierToken("false") => FalseNode
+    case IdentifierToken("nil") => NilNode
+  })
 
-  private def repsepWithNewline[A](parser: Parser[A]): Parser[List[A]] = {
+  private def repsepWithNewline[A](parser: Parser[A]): Parser[List[A]] =
     (repsep(parser, SeparatorToken) <~ SeparatorToken).? ^^ {
       case Some(as) => as
       case None => List.empty[A]
     }
-  }
 }
 
 class TokenReader(tokens: Seq[Token]) extends Reader[Token] {

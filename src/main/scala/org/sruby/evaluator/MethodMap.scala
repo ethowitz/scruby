@@ -4,12 +4,9 @@ class MethodMap private(m: Map[Symbol, RubyMethod]) {
   private val internalMap = m
 
   // scalastyle:off method.name
-  def +(t: (Symbol, RubyMethod)): MethodMap = t match {
-    case ('initialize, method) => new MethodMap(internalMap + ('new -> RubyConstructor(method)))
-    case tuple => new MethodMap(internalMap + tuple)
-  }
+  def +(t: (Symbol, RubyMethod)): MethodMap = new MethodMap(internalMap + t)
 
-  def ++(other: MethodMap): MethodMap = new MethodMap(internalMap ++ other.internalMap)
+  def ++(that: MethodMap): MethodMap = new MethodMap(internalMap ++ that.internalMap)
   // scalastyle:on method.name
 
   def get(key: Symbol): Option[RubyMethod] = internalMap get key
