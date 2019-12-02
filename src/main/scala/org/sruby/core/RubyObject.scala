@@ -16,7 +16,7 @@ class RubyObject(
 
   def methods: MethodMap = predefInstanceMethods ++ instanceMethods
 
-  // TODO this should not be a runtime error
+  // this should not be a runtime error
   def newInstance: RubyObject = throw new Exception("attempted to instantiate object")
 
   def withInstanceMethod(t: (Symbol, RubyMethod)): RubyObject =
