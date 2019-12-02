@@ -45,7 +45,7 @@ object RubyParser extends Parsers {
         repsep(nonKeywordIdentifierParser, CommaToken) <~ ClosingParenthesisToken
 
       def methodBodyParser: Parser[List[AST]] =
-        repsepWithNewline(expressionParser) <~ endTokenParser
+        repsepWithNewline(expressionParser | methodDefParser) <~ endTokenParser
 
       def instanceMethodDefParser: Parser[InstanceMethodDefNode] = {
         def instanceMethodHeaderParser: Parser[IdentifierNode ~ Option[List[IdentifierNode]]] = {

@@ -67,21 +67,28 @@ object Evaluator {
       _ <- name match {
         case 'initialize => State.modify[EvalState] { s =>
           val newKlass = klass.withKlassMethod('new -> RubyConstructor(scope, params, ts))
+          val newSelf = s.self.withKlassMethod('new -> RubyConstructor(scope, params, ts))
 
-          s.copy(klasses = s.klasses + (s.scope -> newKlass), self = newKlass)
+          s.copy(klasses = s.klasses + (s.scope -> newKlass), self = newSelf)
         }
         case _ => State.modify[EvalState] { s =>
-          val newKlass = s.self.withInstanceMethod(name -> RubyMethod(params, ts))
+          val newKlass = klass.withInstanceMethod(name -> RubyMethod(params, ts))
+          val newSelf = s.self.withInstanceMethod(name -> RubyMethod(params, ts))
 
-          s.copy(klasses = s.klasses + (s.scope -> newKlass), self = newKlass)
+          s.copy(klasses = s.klasses + (s.scope -> newKlass), self = newSelf)
         }
       }
     } yield RubySymbol(name)
 
-    def evalKlassMethodDef(name: Symbol, params: List[Symbol], ts: List[AST]): Evaluation =
-      State.modify[EvalState] { s =>
-        s.copy(self = s.self.withKlassMethod(name -> RubyMethod(params, ts)))
-      }.map { _ => RubySymbol(name) }
+    def evalKlassMethodDef(name: Symbol, params: List[Symbol], ts: List[AST]): Evaluation = for {
+      scope <- State.inspect[EvalState, Symbol](_.scope)
+      klass <- getKlass(scope)
+      _ <- State.modify[EvalState] { s =>
+        val newKlass = klass.withKlassMethod(name -> RubyMethod(params, ts))
+
+        s.copy(klasses = s.klasses + (s.scope -> newKlass), self = newKlass)
+      }
+    } yield RubySymbol(name)
 
     def evalIf(p: AST, yeses: List[AST], nos: List[AST]): Evaluation = for {
       predicateResult <- eval(p)
