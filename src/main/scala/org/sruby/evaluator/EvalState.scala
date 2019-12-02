@@ -2,24 +2,11 @@ package org.sruby.evaluator
 
 import org.sruby.core.RubyObject
 
-final case class EvalState(klasses: KlassMap, localVars: VariableMap, self: RubyObject) {
-  def addIvarOnSelf(mapping: (Symbol, RubyObject)): EvalState =
-    EvalState(klasses, localVars, self.withIvar(mapping))
-
-  def addMethodOnSelf(mapping: (Symbol, RubyMethod)): EvalState =
-    EvalState(klasses, localVars, self.withMethod(mapping))
-
-  def addLocalVar(mapping: (Symbol, RubyObject)): EvalState =
-    EvalState(klasses, localVars + mapping, self)
-
-  def addKlass(mapping: (Symbol, RubyObject)): EvalState =
-    EvalState(klasses + mapping, localVars, self)
-
-  def setLocalVars(newLocalVars: VariableMap): EvalState = EvalState(klasses, newLocalVars, self)
-
-  def setSelf(newSelf: RubyObject): EvalState = EvalState(klasses, localVars, newSelf)
-}
+// scope will eventually be a RubyConstant
+final case class EvalState(
+  val klasses: KlassMap, val localVars: VariableMap, val self: RubyObject, val scope: Symbol
+)
 
 object EvalState {
-  def start: EvalState = EvalState(KlassMap.empty, VariableMap.empty, RubyMain)
+  def start: EvalState = EvalState(KlassMap.empty, VariableMap.empty, RubyMain, 'main)
 }

@@ -11,10 +11,10 @@ class RubyMethod(val params: Seq[Symbol], val ts: List[AST]) {
   ): State[EvalState, RubyObject] = args.flatMap { evaldArgs =>
     evaldArgs.length == params.length match {
       case true =>
-        val bindings = (params zip evaldArgs).toMap
-        val tsWithBoundVars = ts.map(_.withBoundVars(bindings))
+        val argMap = (params zip evaldArgs).toMap
+        val tsWithBoundvars = ts.map(_.withBoundVars(argMap))
 
-        for { result <- evals(tsWithBoundVars) } yield result
+        evals(tsWithBoundvars)
       case false =>
         val errorMessage =
           s"wrong number of arguments (given ${evaldArgs.length}, expected ${params.length})"
@@ -25,6 +25,6 @@ class RubyMethod(val params: Seq[Symbol], val ts: List[AST]) {
 }
 
 object RubyMethod {
-  def apply(arg: AST): RubyMethod = RubyMethod(List(), List(arg))
+  def apply(arg: AST): RubyMethod = RubyMethod(Seq.empty[Symbol], List[AST](arg))
   def apply(params: Seq[Symbol], ts: List[AST]): RubyMethod = new RubyMethod(params, ts)
 }

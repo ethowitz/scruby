@@ -7,34 +7,43 @@ import org.sruby.parser.RubyObjectContainerNode
 
 class RubyObject(
   val klass: Symbol,
-  val name: Option[Symbol],
-  val ms: MethodMap,
+  private val instanceMethods: MethodMap,
+  private val klassMethods: MethodMap,
   val ivars: VariableMap
 ) {
-  def methods: MethodMap = predefMethods ++ ms
+  // Public members
+  def definingContext: Symbol = klass
 
-  def withMethod(method: (Symbol, RubyMethod)): RubyObject =
-    RubyObject(klass, name, ms + method, ivars)
-  def withIvar(ivar: (Symbol, RubyObject)): RubyObject =
-    RubyObject(klass, name, ms, ivars + ivar)
+  def methods: MethodMap = predefInstanceMethods ++ instanceMethods
 
-  protected def predefMethods: MethodMap = {
+  // this should not be a runtime error
+  def newInstance: RubyObject = throw new Exception("attempted to instantiate object")
+
+  def withInstanceMethod(t: (Symbol, RubyMethod)): RubyObject =
+    RubyObject(klass, instanceMethods + t, klassMethods, ivars)
+
+  def withIvar(t: (Symbol, RubyObject)): RubyObject =
+    RubyObject(klass, instanceMethods, klassMethods, ivars + t)
+
+  def withKlassMethod(t: (Symbol, RubyMethod)): RubyObject =
+    RubyObject(klass, instanceMethods, klassMethods + t, ivars)
+
+  // Protected members
+  protected def predefInstanceMethods: MethodMap = {
     val _klass: (Symbol, RubyMethod) = 'class ->
-      RubyMethod(RubyObjectContainerNode(RubyString(klass.name)))
-    val _initialize: (Symbol, RubyMethod) = 'new ->
-      RubyMethod(RubyObjectContainerNode(RubyObject(klass, name, ms, ivars)))
+      RubyMethod(RubyObjectContainerNode(RubyString(klass.name.toString)))
     val nil: (Symbol, RubyMethod) = Symbol("nil?") ->
       RubyMethod(RubyObjectContainerNode(RubyFalseClass))
 
-    MethodMap(nil, _klass, _initialize)
+    MethodMap(nil, _klass)
   }
 }
 
 object RubyObject {
-  def apply(klass: Symbol, name: Option[Symbol], ms: MethodMap, ivars: VariableMap): RubyObject =
-    new RubyObject(klass, name, ms, ivars)
+  def apply(
+    klass: Symbol, instanceMethods: MethodMap, klassMethods: MethodMap, ivars: VariableMap
+  ): RubyObject = new RubyObject(klass, instanceMethods, klassMethods, ivars)
 
-  def apply(klass: Symbol): RubyObject = apply(klass, None, MethodMap(), VariableMap())
-  def apply(klass: Symbol, name: Symbol, ms: MethodMap, ivars: VariableMap): RubyObject =
-    apply(klass, Some(name), ms, ivars)
+  def apply(klass: Symbol): RubyObject =
+    apply(klass, MethodMap.empty, MethodMap.empty, VariableMap.empty)
 }
