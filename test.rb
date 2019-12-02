@@ -13,5 +13,6 @@ class Test
 end
 
 a = Test.new
+a.test
 a.another
 Test.what

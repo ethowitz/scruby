@@ -7,16 +7,13 @@ import org.sruby.core.RubyObject
 class RubyConstructor(val klass: Symbol, params: Seq[Symbol], ts: List[AST])
   extends RubyMethod(params, ts) {
 
-  override def invoke(
-    args: State[EvalState, Seq[RubyObject]],
-    evals: List[AST] => State[EvalState, RubyObject]
-  ): State[EvalState, RubyObject] = for {
+  override def invoke(args: State[EvalState, Seq[RubyObject]]): State[EvalState, RubyObject] = for {
     _ <- State.modify[EvalState] { s =>
       val k = s.klasses.get(klass).getOrElse(throw new Exception(s"class ${klass} not found"))
 
       s.copy(self = k.newInstance)
     }
-    _ <- super.invoke(args, evals)
+    _ <- super.invoke(args)
     newSelf <- State.inspect[EvalState, RubyObject](_.self)
   } yield newSelf
 }
