@@ -87,13 +87,15 @@ final case class UnlessNode(predicate: AST, body: List[AST])
 final case class IvarIdentifierNode(name: Symbol) extends AST
 final case class IdentifierNode(name: Symbol) extends AST
 final case class ConstantNode(name: Symbol) extends AST
-final case class ArrayNode(arr: Seq[AST]) extends AST
-final case class HashNode(h: Map[AST, AST]) extends AST
-final case class StringNode(s: String) extends AST
-final case class SymbolNode(s: Symbol) extends AST
-final case class IntegerNode(i: Integer) extends AST
-final case class FloatNode(f: Float) extends AST
-case object TrueNode extends AST
-case object FalseNode extends AST
-case object NilNode extends AST
-case object SelfNode extends AST
+
+sealed trait LiteralNode extends AST
+final case class ArrayNode(arr: Seq[AST]) extends LiteralNode
+final case class HashNode(h: Map[AST, AST]) extends LiteralNode
+final case class StringNode(s: String) extends LiteralNode
+final case class SymbolNode(s: Symbol) extends LiteralNode
+final case class IntegerNode(i: Integer) extends LiteralNode
+final case class FloatNode(f: Float) extends LiteralNode
+case object TrueNode extends LiteralNode
+case object FalseNode extends LiteralNode
+case object NilNode extends LiteralNode
+case object SelfNode extends LiteralNode
