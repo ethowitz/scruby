@@ -1,7 +1,7 @@
-package com.ethowitz.sruby.core
+package org.sruby.core
 
-import com.ethowitz.sruby.evaluator.{ MethodMap, RubyMethod, VariableMap }
-import com.ethowitz.sruby.parser.RubyObjectContainerNode
+import org.sruby.evaluator.{ MethodMap, RubyMethod, VariableMap }
+import org.sruby.parser.RubyObjectContainerNode
 
 class RubyKlass(
   val name: Symbol, private val instanceMethods: MethodMap, private val klassMethods: MethodMap
