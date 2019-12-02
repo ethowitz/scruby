@@ -5,20 +5,21 @@ import org.sruby.parser.AST
 import org.sruby.core.RubyObject
 
 class RubyMethod(val params: Seq[Symbol], val ts: List[AST]) {
-  def invoke(args: State[EvalState, Seq[RubyObject]]): State[EvalState, RubyObject] = args.flatMap { evaldArgs =>
-    evaldArgs.length == params.length match {
-      case true =>
-        val argMap = (params zip evaldArgs).toMap
-        val tsWithBoundvars = ts.map(_.withBoundVars(argMap))
+  def invoke(args: State[EvalState, Seq[RubyObject]]): State[EvalState, RubyObject] =
+    args.flatMap { evaldArgs =>
+      evaldArgs.length == params.length match {
+        case true =>
+          val argMap = (params zip evaldArgs).toMap
+          val tsWithBoundvars = ts.map(_.withBoundVars(argMap))
 
-        Evaluator.evalList(tsWithBoundvars)
-      case false =>
-        val errorMessage =
-          s"wrong number of arguments (given ${evaldArgs.length}, expected ${params.length})"
+          Evaluator.evalList(tsWithBoundvars)
+        case false =>
+          val errorMessage =
+            s"wrong number of arguments (given ${evaldArgs.length}, expected ${params.length})"
 
-        throw new Exception(errorMessage)
+          throw new Exception(errorMessage)
+      }
     }
-  }
 }
 
 object RubyMethod {
