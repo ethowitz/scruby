@@ -64,8 +64,11 @@ final case class InstanceMethodDefNode(name: Symbol, params: List[Symbol], body:
 final case class KlassMethodDefNode(name: Symbol, params: List[Symbol], body: List[AST])
   extends MethodDefNode
 
-final case class LocalVarAssignmentNode(name: Symbol, value: AST) extends AST
-final case class IvarAssignmentNode(name: Symbol, value: AST) extends AST
+sealed trait VariableNode extends AST
+final case class IvarIdentifierNode(name: Symbol) extends VariableNode
+final case class LocalVarAssignmentNode(name: Symbol, value: AST) extends VariableNode
+final case class IvarAssignmentNode(name: Symbol, value: AST) extends VariableNode
+
 final case class RubyObjectContainerNode(obj: RubyObject) extends AST
 
 sealed trait InvocationNode extends AST
@@ -84,7 +87,6 @@ final case class IfNode(predicate: AST, yesBranch: List[AST], noBranch: List[AST
 final case class UnlessNode(predicate: AST, body: List[AST])
   extends ConditionalNode
 
-final case class IvarIdentifierNode(name: Symbol) extends AST
 final case class IdentifierNode(name: Symbol) extends AST
 final case class ConstantNode(name: Symbol) extends AST
 

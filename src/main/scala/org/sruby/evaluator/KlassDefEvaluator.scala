@@ -4,9 +4,9 @@ import cats.data.State
 import org.sruby.core._
 import org.sruby.parser._
 
-object KlassDefEvaluator extends EvaluatorLike {
+object KlassDefEvaluator extends EvaluatorLike[KlassDefNode] {
   // Public members
-  def eval: PartialFunction[AST, Evaluator.Evaluation] = {
+  val eval: PartialFunction[KlassDefNode, Evaluator.Evaluation] = {
     case KlassDefNode(name, ts) => evalKlassDef(name, ts)
   }
 

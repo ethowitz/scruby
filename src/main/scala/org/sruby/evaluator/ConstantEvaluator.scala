@@ -3,9 +3,9 @@ package org.sruby.evaluator
 import cats.data.State
 import org.sruby.parser._
 
-object ConstantEvaluator extends EvaluatorLike {
+object ConstantEvaluator extends EvaluatorLike[ConstantNode] {
   // Public members
-  def eval: PartialFunction[AST, Evaluator.Evaluation] = {
+  val eval: PartialFunction[ConstantNode, Evaluator.Evaluation] = {
     case ConstantNode(name) => evalConstant(name)
   }
 

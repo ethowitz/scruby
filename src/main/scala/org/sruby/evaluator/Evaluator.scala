@@ -8,20 +8,22 @@ object Evaluator {
   // Public members
   type Evaluation = State[EvalState, RubyObject]
 
-  def apply(ts: List[AST]): RubyObject = evalList(ts).run(EvalState.start).value._2
+  def apply(trees: List[AST]): RubyObject = evalList(trees).run(EvalState.start).value._2
 
-  // This can probably be made better using reflection
-  def eval(t: AST): Evaluation = (KlassDefEvaluator.eval orElse
-    MethodDefEvaluator.eval orElse
-    InvocationEvaluator.eval orElse
-    ConditionalEvaluator.eval orElse
-    VariableEvaluator.eval orElse
-    LiteralEvaluator.eval orElse
-    ConstantEvaluator.eval).lift(t).getOrElse(throw new Exception("unimplemented"))
+  def eval(tree: AST): Evaluation = tree match {
+    case t: KlassDefNode => KlassDefEvaluator.eval(t)
+    case t: MethodDefNode => MethodDefEvaluator.eval(t)
+    case t: InvocationNode => InvocationEvaluator.eval(t)
+    case t: ConditionalNode => ConditionalEvaluator.eval(t)
+    case t: VariableNode => VariableEvaluator.eval(t)
+    case t: LiteralNode => LiteralEvaluator.eval(t)
+    case t: ConstantNode => ConstantEvaluator.eval(t)
+    case _ => throw new Exception("unimplemented")
+  }
 
-  def evalList(ts: List[AST]): Evaluation = {
+  def evalList(trees: List[AST]): Evaluation = {
     val initialState = State.pure[EvalState, RubyObject](RubyNilClass)
 
-    ts.foldLeft(initialState) { (acc, t) => acc.flatMap { _ => eval(t) } }
+    trees.foldLeft(initialState) { (acc, t) => acc.flatMap { _ => eval(t) } }
   }
 }

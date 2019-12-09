@@ -4,9 +4,9 @@ import cats.data.State
 import org.sruby.core._
 import org.sruby.parser._
 
-object ConditionalEvaluator extends EvaluatorLike {
+object ConditionalEvaluator extends EvaluatorLike[ConditionalNode] {
   // Public members
-  def eval: PartialFunction[AST, Evaluator.Evaluation] = {
+  val eval: PartialFunction[ConditionalNode, Evaluator.Evaluation] = {
     case IfNode(p, yes, no) => evalIf(p, yes, no)
     case UnlessNode(p, statements) => evalUnless(p, statements)
   }

@@ -25,8 +25,11 @@ version := "1.0"
 // You can define other libraries as dependencies in your build like this:
 libraryDependencies += "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.4"
 libraryDependencies += "org.scalactic" %% "scalactic" % "3.1.0"
+libraryDependencies += "org.scalamock" %% "scalamock" % "4.4.0" % Test
 libraryDependencies += "org.scalatest" %% "scalatest" % "3.1.0" % "test"
 libraryDependencies += "org.typelevel" %% "cats-core" % "1.6.0"
+
+logBuffered in Test := false
 
 // Here, `libraryDependencies` is a set of dependencies, and by using `+=`,
 // we're adding the cats dependency to the set of dependencies that sbt will go
@@ -89,4 +92,4 @@ scalacOptions ++= Seq(
 addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1")
 
 // Wartremover configuration
-wartremoverErrors ++= Warts.unsafe.diff(Seq(Wart.Recursion, Wart.Throw)) ++ Seq(Wart.ImplicitConversion, Wart.ImplicitParameter)
+wartremoverErrors ++= Warts.unsafe.diff(Seq(Wart.Recursion, Wart.Throw)) ++ Seq(Wart.ImplicitConversion)

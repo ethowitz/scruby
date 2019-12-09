@@ -4,9 +4,9 @@ import cats.data.State
 import org.sruby.core._
 import org.sruby.parser._
 
-object InvocationEvaluator extends EvaluatorLike {
+object InvocationEvaluator extends EvaluatorLike[InvocationNode] {
   // Public members
-  def eval: PartialFunction[AST, Evaluator.Evaluation] = {
+  val eval: PartialFunction[InvocationNode, Evaluator.Evaluation] = {
     case InvocationWithReceiverNode(recvr, msg, args) =>
       evalInvocationWithReceiver(recvr, msg, args)
     case InvocationWithImplicitReceiverNode(msg, args) =>
