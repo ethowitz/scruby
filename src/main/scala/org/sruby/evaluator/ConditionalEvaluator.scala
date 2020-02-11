@@ -6,25 +6,25 @@ import org.sruby.parser._
 
 object ConditionalEvaluator extends EvaluatorLike[ConditionalNode] {
   // Public members
-  val eval: PartialFunction[ConditionalNode, Evaluator.Evaluation] = {
+  val eval: PartialFunction[ConditionalNode, Evaluation] = {
     case IfNode(p, yes, no) => evalIf(p, yes, no)
     case UnlessNode(p, statements) => evalUnless(p, statements)
   }
 
   // Private members
-  def evalIf(p: AST, yeses: List[AST], nos: List[AST]): Evaluator.Evaluation = for {
+  def evalIf(p: AST, yeses: List[AST], nos: List[AST]): Evaluation = for {
     predicateResult <- Evaluator.eval(p)
     result <- predicateResult match {
-      case RubyFalseClass | RubyNilClass => Evaluator.evalList(nos)
+      case RubyFalse | RubyNil => Evaluator.evalList(nos)
       case _ => Evaluator.evalList(yeses)
     }
   } yield result
 
-  def evalUnless(p: AST, ts: List[AST]): Evaluator.Evaluation = for {
+  def evalUnless(p: AST, ts: List[AST]): Evaluation = for {
     predicateResult <- Evaluator.eval(p)
     result <- predicateResult match {
-      case RubyFalseClass | RubyNilClass => Evaluator.evalList(ts)
-      case _ => State.pure[EvalState, RubyObject](RubyNilClass)
+      case RubyFalse| RubyNil=> Evaluator.evalList(ts)
+      case _ => State.pure[Universe, SRubyObject](RubyNil)
     }
   } yield result
 }

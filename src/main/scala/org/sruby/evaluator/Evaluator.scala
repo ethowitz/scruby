@@ -6,9 +6,7 @@ import org.sruby.parser._
 
 object Evaluator {
   // Public members
-  type Evaluation = State[EvalState, RubyObject]
-
-  def apply(trees: List[AST]): RubyObject = evalList(trees).run(EvalState.start).value._2
+  def apply(trees: List[AST]): SRubyObject = evalList(trees).run(Universe.initial).value._2
 
   def eval(tree: AST): Evaluation = tree match {
     case t: KlassDefNode => KlassDefEvaluator.eval(t)
@@ -22,7 +20,7 @@ object Evaluator {
   }
 
   def evalList(trees: List[AST]): Evaluation = {
-    val initialState = State.pure[EvalState, RubyObject](RubyNilClass)
+    val initialState = State.pure[Universe, SRubyObject](RubyNil)
 
     trees.foldLeft(initialState) { (acc, t) => acc.flatMap { _ => eval(t) } }
   }

@@ -5,13 +5,13 @@ import org.sruby.parser._
 
 object ConstantEvaluator extends EvaluatorLike[ConstantNode] {
   // Public members
-  val eval: PartialFunction[ConstantNode, Evaluator.Evaluation] = {
+  val eval: PartialFunction[ConstantNode, Evaluation] = {
     case ConstantNode(name) => evalConstant(name)
   }
 
-  private def evalConstant(name: Symbol): Evaluator.Evaluation = State { s =>
-    s.klasses.get(name) match {
-      case Some(value) => (s, value)
+  private def evalConstant(name: Symbol): Evaluation = State { u =>
+    u.constants.get(name :: Nil) match {
+      case Some(value) => (u, value)
       case None => throw new Exception(s"unitialized constant ${name.toString}")
     }
   }

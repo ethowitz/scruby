@@ -1,16 +1,17 @@
 package org.sruby.core
 
-import org.sruby.evaluator.MethodMap
 import org.sruby.evaluator.RubyMethod
-import org.sruby.evaluator.VariableMap
-import org.sruby.parser.RubyObjectContainerNode
+import org.sruby.evaluator.RuntimeContext
 
-object RubyNilClass extends RubyObject(
-  'NilClass, MethodMap.empty, MethodMap.empty, VariableMap.empty
-) {
-  override def toString: String = "nil"
+case class RubyNilClass private(ctx: RuntimeContext) extends RubyNilClassLike
 
-  override def predefInstanceMethods: MethodMap =
-    super.predefInstanceMethods +
-      (Symbol("nil?") -> RubyMethod(RubyObjectContainerNode(RubyTrueClass)))
+object RubyNilClass {
+  def initialize: RubyNilClass = {
+    RubyNilClass(RuntimeContext(instanceMethods, classMethods, Map.empty[Symbol, SRubyObject]))
+  }
+
+  val instanceMethods = Map.empty[Symbol, RubyMethod]
+  val classMethods = Map.empty[Symbol, RubyMethod]
+
+  val runtimeClass: RubyClass = RubyClass('NilClass, instanceMethods, classMethods)
 }

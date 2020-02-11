@@ -1,10 +1,17 @@
 package org.sruby.core
 
-import org.sruby.evaluator.MethodMap
-import org.sruby.evaluator.VariableMap
+import org.sruby.evaluator.RubyMethod
+import org.sruby.evaluator.RuntimeContext
 
-object RubyFalseClass extends RubyObject(
-  'FalseClass, MethodMap.empty, MethodMap.empty, VariableMap.empty
-) {
-  override def toString: String = "false"
+case class RubyFalseClass private(ctx: RuntimeContext) extends RubyFalseClassLike
+
+object RubyFalseClass {
+  def initialize: RubyFalseClass = {
+    RubyFalseClass(RuntimeContext(instanceMethods, classMethods, Map.empty[Symbol, SRubyObject]))
+  }
+
+  val instanceMethods = Map.empty[Symbol, RubyMethod]
+  val classMethods = Map.empty[Symbol, RubyMethod]
+
+  val runtimeClass: RubyClass = RubyClass('FalseClass, instanceMethods, classMethods)
 }

@@ -8,8 +8,8 @@ trait Factories {
   def factory[A](implicit f: () => A): A = f()
 
   // Protected members
-  protected implicit val evalState: () => EvalState =
-    () => EvalState(klassMap(), variableMap(), rubyObject(), 'TestScope)
+  protected implicit val evalState: () => Universe =
+    () => Universe(klassMap(), variableMap(), rubyObject(), 'TestScope)
 
   protected implicit val klassMap: () => KlassMap = () => KlassMap.empty
 

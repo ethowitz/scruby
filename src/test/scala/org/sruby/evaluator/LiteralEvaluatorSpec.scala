@@ -13,34 +13,34 @@ class LiteralEvaluatorSpec extends SRubySpec {
   }
 
   "LiteralEvaluator#eval" when {
-    val subject: PartialFunction[LiteralNode, Evaluator.Evaluation] = LiteralEvaluator.eval
+    val subject: PartialFunction[LiteralNode, Evaluation] = LiteralEvaluator.eval
 
-    val initialState: EvalState = factory[EvalState]
+    val initialState: Universe = factory[Universe]
 
     "given SelfNode" should {
-      """return an Evaluation whose value is the current EvalState's self with an unchanged 
-          |EvalState""".stripMargin in {
+      """return an Evaluation whose value is the current Universe's self with an unchanged 
+          |Universe""".stripMargin in {
         subject.valueAt(SelfNode).run(initialState).value should
           equal((initialState, initialState.self))
       }
     }
 
     "given TrueNode" should {
-      "return an Evaluation that has a value of RubyTrueClass with an unchanged EvalState" in {
+      "return an Evaluation that has a value of RubyTrueClass with an unchanged Universe" in {
         subject.valueAt(TrueNode).run(initialState).value should
           equal((initialState, RubyTrueClass))
       }
     }
 
     "given FalseNode" should {
-      "return an Evaluation that has a value of RubyFalseClass with an unchanged EvalState" in {
+      "return an Evaluation that has a value of RubyFalseClass with an unchanged Universe" in {
         subject.valueAt(FalseNode).run(initialState).value should
           equal((initialState, RubyFalseClass))
       }
     }
 
     "given NilNode" should {
-      "return an Evaluation that has a value of RubyNilClass with an unchanged EvalState" in {
+      "return an Evaluation that has a value of RubyNilClass with an unchanged Universe" in {
         subject.valueAt(NilNode).run(initialState).value should equal((initialState, RubyNilClass))
       }
     }

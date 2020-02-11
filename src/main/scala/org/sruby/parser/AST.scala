@@ -1,59 +1,9 @@
 package org.sruby.parser
 
-import org.sruby.core.RubyObject
+import org.sruby.core.SRubyObject
 
 // scalastyle:off cyclomatic.complexity
-sealed class AST {
-  def withBoundVars(vars: Map[Symbol, RubyObject]): AST = {
-    def withBoundVars(t: AST): AST = t match {
-      case KlassDefNode(name, ts) => KlassDefNode(name, ts map withBoundVars)
-      case InstanceMethodDefNode(name, params, ts) =>
-        InstanceMethodDefNode(name, params, ts map withBoundVars)
-
-      case KlassMethodDefNode(name, params, ts) =>
-        KlassMethodDefNode(name, params, ts map withBoundVars)
-
-      case InvocationWithReceiverNode(IdentifierNode(recvr), msg, ts) => vars get recvr match {
-        case Some(arg) =>
-          InvocationWithReceiverNode(RubyObjectContainerNode(arg), msg, ts map withBoundVars)
-        case None => InvocationWithReceiverNode(IdentifierNode(recvr), msg, ts map withBoundVars)
-      }
-
-      case InvocationWithReceiverNode(recvr, msg, ts) =>
-        InvocationWithReceiverNode(withBoundVars(recvr), msg, ts map withBoundVars)
-
-      case invocation @ InvocationWithImplicitReceiverNode(msg, Nil) => vars get msg match {
-        case Some(arg) => RubyObjectContainerNode(arg)
-        case None => invocation
-      }
-
-      case InvocationWithImplicitReceiverNode(msg, ts) =>
-        InvocationWithImplicitReceiverNode(msg, ts map withBoundVars)
-
-      case IfNode(p, yes, no) =>
-        IfNode(withBoundVars(p), yes map withBoundVars, no map withBoundVars)
-
-      case UnlessNode(p, ts) => UnlessNode(withBoundVars(p), ts map withBoundVars)
-
-      case node @ IvarAssignmentNode(name, InvocationWithImplicitReceiverNode(value, Nil)) =>
-        vars get value match {
-          case Some(arg) => IvarAssignmentNode(name, RubyObjectContainerNode(arg))
-          case None => node
-        }
-
-      case node @ LocalVarAssignmentNode(name, InvocationWithImplicitReceiverNode(value, Nil)) =>
-        vars get value match {
-          case Some(arg) => LocalVarAssignmentNode(name, RubyObjectContainerNode(arg))
-          case None => node
-        }
-
-      // Removing the default case results in extremely long compilation times
-      case default => default
-    }
-
-    withBoundVars(this)
-  }
-}
+sealed class AST
 
 final case class KlassDefNode(name: Symbol, statements: List[AST]) extends AST
 
@@ -69,7 +19,7 @@ final case class IvarIdentifierNode(name: Symbol) extends VariableNode
 final case class LocalVarAssignmentNode(name: Symbol, value: AST) extends VariableNode
 final case class IvarAssignmentNode(name: Symbol, value: AST) extends VariableNode
 
-final case class RubyObjectContainerNode(obj: RubyObject) extends AST
+final case class SRubyObjectContainerNode(obj: SRubyObject) extends AST
 
 sealed trait InvocationNode extends AST
 final case class InvocationWithReceiverNode(receiver: AST, message: Symbol, args: List[AST])

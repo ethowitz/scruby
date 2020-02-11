@@ -1,13 +1,17 @@
 package org.sruby.core
 
-import org.sruby.evaluator.MethodMap
+import org.sruby.evaluator.RubyMethod
+import org.sruby.evaluator.RuntimeContext
 
-class RubySymbol(val s: Symbol, instanceMethods: MethodMap, klassMethods: MethodMap)
-  extends RubyKlass('Symbol, instanceMethods, klassMethods) {
+case class RubySymbol private(val s: Symbol, ctx: RuntimeContext) extends RubySymbolLike
 
-  override def toString: String = s.toString.replace("'", "")
-}
+object RubySymbol extends SRubyObjectCompanion {
+  def apply(s: Symbol): RubySymbol = {
+    RubySymbol(s, RuntimeContext(instanceMethods, classMethods, Map.empty[Symbol, SRubyObject]))
+  }
 
-object RubySymbol {
-  def apply(s: Symbol): RubySymbol = new RubySymbol(s, MethodMap.empty, MethodMap.empty)
+  val instanceMethods = Map.empty[Symbol, RubyMethod]
+  val classMethods = Map.empty[Symbol, RubyMethod]
+
+  val runtimeClass: RubyClass = RubyClass('Symbol, instanceMethods, classMethods)
 }

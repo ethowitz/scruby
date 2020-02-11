@@ -1,10 +1,17 @@
 package org.sruby.core
 
-import org.sruby.evaluator.MethodMap
-import org.sruby.evaluator.VariableMap
+import org.sruby.evaluator.RubyMethod
+import org.sruby.evaluator.RuntimeContext
 
-object RubyTrueClass extends RubyObject(
-  'TrueClass, MethodMap.empty, MethodMap.empty, VariableMap.empty
-) {
-  override def toString: String = "true"
+case class RubyTrueClass private(ctx: RuntimeContext) extends RubyTrueClassLike
+
+object RubyTrueClass {
+  def initialize: RubyTrueClass = {
+    RubyTrueClass(RuntimeContext(instanceMethods, classMethods, Map.empty[Symbol, SRubyObject]))
+  }
+
+  val instanceMethods = Map.empty[Symbol, RubyMethod]
+  val classMethods = Map.empty[Symbol, RubyMethod]
+
+  val runtimeClass: RubyClass = RubyClass('TrueClass, instanceMethods, classMethods)
 }

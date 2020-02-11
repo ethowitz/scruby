@@ -13,16 +13,16 @@ class VariableEvaluatorSpec extends SRubySpec {
   }
 
   "VariableEvaluator#eval" when {
-    val subject: PartialFunction[VariableNode, Evaluator.Evaluation] = VariableEvaluator.eval
+    val subject: PartialFunction[VariableNode, Evaluation] = VariableEvaluator.eval
 
-    val initialState: EvalState = factory[EvalState]
+    val initialState: Universe = factory[Universe]
 
     "given a LocalVarAssignmentNode" should {
       val name: Symbol = 'test_name
       val value: AST = TrueNode
       val node: LocalVarAssignmentNode = LocalVarAssignmentNode(name, value)
 
-      """return an Evaluation with an EvalState equal to the initial EvalState with an added local 
+      """return an Evaluation with an Universe equal to the initial Universe with an added local 
           |variable consisting of the given name and evaluated value""".stripMargin in {
         val updatedVariableMap = factory[VariableMap] + (name -> RubyTrueClass)
         val finalState = initialState.copy(localVars = updatedVariableMap)
@@ -36,7 +36,7 @@ class VariableEvaluatorSpec extends SRubySpec {
       //val value: AST = TrueNode
       //val node: IvarAssignmentNode = IvarAssignmentNode(name, value)
 
-      //"""return an Evaluation with an EvalState equal to the initial EvalState whose self has an 
+      //"""return an Evaluation with an Universe equal to the initial Universe whose self has an 
           //|additional ivar consisting of the given name and evaluated value""".stripMargin in {
         //val updatedSelf = initialState.self.withIvar(name -> RubyTrueClass)
         //val finalState = initialState.copy(self = updatedSelf)

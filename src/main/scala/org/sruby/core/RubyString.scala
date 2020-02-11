@@ -1,16 +1,17 @@
 package org.sruby.core
 
-import org.sruby.evaluator.MethodMap
+import org.sruby.evaluator.RubyMethod
+import org.sruby.evaluator.RuntimeContext
 
-class RubyString(val s: String, instanceMethods: MethodMap, klassMethods: MethodMap)
-  extends RubyKlass('String, instanceMethods, klassMethods) {
+case class RubyString private(val s: String, ctx: RuntimeContext) extends RubyStringLike
 
-  override def toString: String = s
-}
+object RubyString extends SRubyObjectCompanion {
+  def apply(s: String): RubyString = {
+    RubyString(s, RuntimeContext(instanceMethods, classMethods, Map.empty[Symbol, SRubyObject]))
+  }
 
-object RubyString {
-  def apply(s: String, instanceMethods: MethodMap, klassMethods: MethodMap): RubyString =
-    new RubyString(s, instanceMethods, klassMethods)
+  val instanceMethods = Map.empty[Symbol, RubyMethod]
+  val classMethods = Map.empty[Symbol, RubyMethod]
 
-  def apply(s: String): RubyString = new RubyString(s, MethodMap.empty, MethodMap.empty)
+  val runtimeClass: RubyClass = RubyClass('String, instanceMethods, classMethods)
 }
